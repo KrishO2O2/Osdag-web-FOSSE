@@ -1,0 +1,412 @@
+/* ============================================================
+   GroupDesign.css — Group Design Module
+   Matches Osdag's existing dark-panel aesthetic
+   ============================================================ */
+
+/* --- Layout ------------------------------------------------ */
+.gd-root {
+  display: flex;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  background: #1a1a2e;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+  color: #e0e0e0;
+}
+
+/* --- Left Panel ------------------------------------------- */
+.gd-left-panel {
+  width: 320px;
+  min-width: 280px;
+  max-width: 340px;
+  background: #16213e;
+  border-right: 1px solid #0f3460;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* --- Tabs -------------------------------------------------- */
+.gd-tabs {
+  display: flex;
+  border-bottom: 2px solid #0f3460;
+  background: #0f3460;
+}
+
+.gd-tab {
+  flex: 1;
+  padding: 9px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #aaa;
+  border: none;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.gd-tab.active {
+  background: #4caf50;
+  color: #fff;
+  border-radius: 2px 2px 0 0;
+}
+
+.gd-tab:not(.active):hover {
+  background: #1a3a6e;
+  color: #ddd;
+}
+
+/* --- Tab Content ------------------------------------------ */
+.gd-tab-content {
+  padding: 12px;
+  flex: 1;
+}
+
+/* --- Form Fields ------------------------------------------ */
+.gd-field {
+  margin-bottom: 10px;
+}
+
+.gd-label {
+  display: block;
+  font-size: 12px;
+  color: #bbb;
+  margin-bottom: 3px;
+}
+
+.gd-select,
+.gd-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: #0d1b3e;
+  border: 1px solid #2a4a8a;
+  border-radius: 3px;
+  color: #e0e0e0;
+  font-size: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.gd-select:focus,
+.gd-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.gd-select option {
+  background: #0d1b3e;
+}
+
+/* --- Error text ------------------------------------------- */
+.gd-error {
+  color: #ff6b6b;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+/* --- Section headers -------------------------------------- */
+.gd-section {
+  border: 1px solid #2a4a8a;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.gd-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #2a4a8a;
+  padding-bottom: 4px;
+}
+
+/* --- Buttons ---------------------------------------------- */
+.gd-btn {
+  display: inline-block;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.gd-btn:hover {
+  opacity: 0.88;
+}
+
+.gd-btn-green {
+  background: #4caf50;
+  color: #fff;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.gd-btn-orange {
+  background: #e67e22;
+  color: #fff;
+}
+
+.gd-btn-yellow {
+  background: #f0c040;
+  color: #333;
+}
+
+.gd-btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+/* --- Project Location row --------------------------------- */
+.gd-location-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.gd-location-row .gd-btn {
+  flex: 1;
+}
+
+/* --- Geometric Details header row ------------------------- */
+.gd-section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #2a4a8a;
+  padding-bottom: 4px;
+}
+
+.gd-section-header-row .gd-section-title {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* --- Right Panel ------------------------------------------ */
+.gd-right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: #1a1a2e;
+  padding: 12px;
+  overflow: auto;
+}
+
+.gd-right-panel-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4caf50;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #0f3460;
+  width: 100%;
+  text-align: center;
+  padding: 6px 0;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+
+.gd-bridge-image {
+  max-width: 100%;
+  max-height: calc(100vh - 120px);
+  object-fit: contain;
+  border: 1px solid #2a4a8a;
+  border-radius: 4px;
+}
+
+.gd-bridge-image-placeholder {
+  width: 100%;
+  flex: 1;
+  border: 1px dashed #2a4a8a;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 13px;
+  min-height: 300px;
+}
+
+/* --- Modal Overlay ---------------------------------------- */
+.gd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.gd-modal {
+  background: #16213e;
+  border: 1px solid #2a4a8a;
+  border-radius: 6px;
+  padding: 20px 24px;
+  width: 380px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.gd-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e0e0e0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #2a4a8a;
+  padding-bottom: 8px;
+}
+
+.gd-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.gd-modal-note {
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* --- IRC Results panel ------------------------------------ */
+.gd-irc-panel {
+  background: #0d1b3e;
+  border: 1px solid #2a4a8a;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.gd-irc-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4caf50;
+  margin-bottom: 6px;
+}
+
+.gd-irc-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 3px;
+}
+
+.gd-irc-row span:last-child {
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+/* --- Additional Inputs placeholder ------------------------ */
+.gd-additional-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #555;
+  font-size: 13px;
+  border: 1px dashed #2a4a8a;
+  border-radius: 4px;
+  margin-top: 12px;
+}
+
+/* --- Checkbox rows (Project Location modes) -------------- */
+.gd-location-mode-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.gd-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+  user-select: none;
+}
+
+.gd-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: #4caf50;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* --- IRC values in green --------------------------------- */
+.gd-irc-value {
+  color: #4caf50 !important;
+  font-weight: 600;
+}
+
+/* --- Custom loading parameters table --------------------- */
+.gd-custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.gd-custom-table th {
+  background: #0f3460;
+  color: #ccc;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid #2a4a8a;
+}
+
+.gd-custom-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #1a2a5e;
+  color: #ccc;
+  vertical-align: middle;
+}
+
+.gd-custom-table tr:nth-child(even) td {
+  background: #0d1b3e;
+}
+
+.gd-table-input {
+  padding: 4px 6px !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+}
+
+/* Add this block to the END of GroupDesign.css */
+
+/* Static read-only value display (e.g. State auto-filled from city) */
+.gd-static-value {
+  background: #0d1b3e;
+  border: 1px solid #2a4a8a;
+  border-radius: 3px;
+  color: #888;
+  font-size: 12px;
+  padding: 6px 8px;
+  font-style: italic;
+}
+
+/* Modal info bar */
+.gd-modal-info {
+  font-size: 11px;
+  color: #4caf50;
+  background: #0a2a1a;
+  border: 1px solid #2a6a3a;
+  border-radius: 3px;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+}

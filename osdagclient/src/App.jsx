@@ -28,6 +28,8 @@ import EndPlate from './components/shearConnection/EndPlate';
 import CleatAngle from './components/shearConnection/CleatAngle';
 import SeatedAngle from './components/shearConnection/SeatedAngle';
 
+import GroupDesignPage from './GroupDesign/pages/GroupDesignPage';
+
 let renderedOnce = false
 
 function App() {
@@ -52,6 +54,7 @@ function App() {
         <Route path="/" element={<LoginPage />} />
         <Route path='/design-type/:designType' element={<Window />} />
         {/* Wrap FinePlate with a route that checks authentication */}
+        <Route path="/design-type/group-design" element={<GroupDesignPage />} />
         <Route
           path='/design/:designType/fin_plate'
           element={
