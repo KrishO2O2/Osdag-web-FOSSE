@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchMasterData,
-  fetchLocationByCity,
+  fetchStates,
+  fetchDistrictsByState,
+  fetchLocationByStateDistrict,
   checkGeometryApi,
   submitGroupDesignApi,
   normalizeApiError,
@@ -10,12 +12,20 @@ import {
 const initialForm = {
   structure_type: "highway",
   mode: "location_lookup",
+
+  // NEW extra-credit fields
+  state: "",
+  district: "",
+
+  // keep old city for compatibility with submit serializer (mapped from district)
   city: "",
+
   wind_speed: "",
   seismic_zone: "",
   zone_factor: "",
   shade_air_temp_max: "",
   shade_air_temp_min: "",
+
   span: "",
   carriageway_width: "",
   footpath: "none",
@@ -23,6 +33,7 @@ const initialForm = {
   girder_spacing: "",
   number_of_girders: "",
   deck_overhang_width: "",
+
   girder_steel: "",
   cross_bracing_steel: "",
   deck_concrete: "",
@@ -33,6 +44,7 @@ const toIntOrNull = (v) => (v === "" ? null : parseInt(v, 10));
 
 export default function useGroupDesign() {
   const [form, setForm] = useState(initialForm);
+
   const [masterData, setMasterData] = useState({
     structure_types: [],
     footpath_options: [],
@@ -41,6 +53,10 @@ export default function useGroupDesign() {
     cities: [],
     location_modes: [],
   });
+
+  // NEW datasets
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   const [loadingMaster, setLoadingMaster] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -55,21 +71,26 @@ export default function useGroupDesign() {
   const [submitResult, setSubmitResult] = useState(null);
 
   const isLookupMode = form.mode === "location_lookup";
+  const isCustomMode = form.mode === "custom_loading";
 
+  // load static master + states
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         setLoadingMaster(true);
-        const data = await fetchMasterData();
-        if (active) setMasterData(data);
+        const [md, st] = await Promise.all([fetchMasterData(), fetchStates()]);
+        if (!active) return;
+        setMasterData(md);
+        setStates(st || []);
       } catch (e) {
         const err = normalizeApiError(e);
-        if (active) setGlobalErrors(err.non_field_errors || ["Failed to load master data."]);
+        if (active) setGlobalErrors(err.non_field_errors || ["Failed to load initial data."]);
       } finally {
         if (active) setLoadingMaster(false);
       }
     })();
+
     return () => {
       active = false;
     };
@@ -98,18 +119,57 @@ export default function useGroupDesign() {
           shade_air_temp_min: "",
         };
       }
-      return { ...prev, mode, city: "" };
+      // custom mode: clear lookup selectors
+      return { ...prev, mode, state: "", district: "", city: "" };
     });
+    setDistricts([]);
   };
 
-  const fetchLocation = async () => {
-    if (!form.city) return;
+  // NEW: on state change, fetch districts
+  const onStateChange = async (stateVal) => {
+    setField("state", stateVal);
+    setForm((prev) => ({
+      ...prev,
+      state: stateVal,
+      district: "",
+      city: "",
+      wind_speed: "",
+      seismic_zone: "",
+      zone_factor: "",
+      shade_air_temp_max: "",
+      shade_air_temp_min: "",
+    }));
+    setDistricts([]);
+
+    if (!stateVal) return;
     try {
       setLoadingLocation(true);
-      setGlobalErrors([]);
-      const data = await fetchLocationByCity(form.city);
+      const ds = await fetchDistrictsByState(stateVal);
+      setDistricts(ds || []);
+    } catch (e) {
+      const err = normalizeApiError(e);
+      setGlobalErrors(err.non_field_errors || ["Failed to fetch districts."]);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  // NEW: on district change, auto-fill values
+  const onDistrictChange = async (districtVal) => {
+    setForm((prev) => ({
+      ...prev,
+      district: districtVal,
+      city: districtVal, // compatibility for current submit serializer
+    }));
+
+    if (!form.state || !districtVal) return;
+    try {
+      setLoadingLocation(true);
+      const data = await fetchLocationByStateDistrict(form.state, districtVal);
       setForm((prev) => ({
         ...prev,
+        district: districtVal,
+        city: districtVal,
         wind_speed: data.wind_speed ?? "",
         seismic_zone: data.seismic_zone ?? "",
         zone_factor: data.zone_factor ?? "",
@@ -118,7 +178,7 @@ export default function useGroupDesign() {
       }));
     } catch (e) {
       const err = normalizeApiError(e);
-      setGlobalErrors(err.non_field_errors || ["Failed to fetch location values."]);
+      setGlobalErrors(err.non_field_errors || ["Failed to fetch district values."]);
     } finally {
       setLoadingLocation(false);
     }
@@ -160,7 +220,11 @@ export default function useGroupDesign() {
   const buildSubmitPayload = () => {
     const project_location =
       form.mode === "location_lookup"
-        ? { mode: "location_lookup", city: form.city }
+        ? {
+            mode: "location_lookup",
+            // serializer currently expects city; map district to city
+            city: form.city || form.district,
+          }
         : {
             mode: "custom_loading",
             wind_speed: toFloatOrNull(form.wind_speed),
@@ -212,6 +276,8 @@ export default function useGroupDesign() {
   return {
     form,
     masterData,
+    states,
+    districts,
     loadingMaster,
     loadingLocation,
     checkingGeometry,
@@ -222,9 +288,11 @@ export default function useGroupDesign() {
     geometryResult,
     submitResult,
     isLookupMode,
+    isCustomMode,
     setField,
     setMode,
-    fetchLocation,
+    onStateChange,
+    onDistrictChange,
     checkGeometry,
     submit,
   };

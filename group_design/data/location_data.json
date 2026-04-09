@@ -1,0 +1,74 @@
+[
+    {
+      "state": "Maharashtra",
+      "district": "Mumbai",
+      "wind_speed": 44,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 40,
+      "shade_air_temp_min": 12
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 38,
+      "shade_air_temp_min": 10
+    },
+    {
+      "state": "Karnataka",
+      "district": "Bengaluru Urban",
+      "wind_speed": 33,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 34,
+      "shade_air_temp_min": 14
+    },
+    {
+      "state": "Karnataka",
+      "district": "Mysuru",
+      "wind_speed": 33,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 35,
+      "shade_air_temp_min": 13
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "wind_speed": 50,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 39,
+      "shade_air_temp_min": 20
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Coimbatore",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 37,
+      "shade_air_temp_min": 18
+    },
+    {
+      "state": "Delhi",
+      "district": "New Delhi",
+      "wind_speed": 47,
+      "seismic_zone": "IV",
+      "zone_factor": 0.24,
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 6
+    },
+    {
+      "state": "Delhi",
+      "district": "North Delhi",
+      "wind_speed": 47,
+      "seismic_zone": "IV",
+      "zone_factor": 0.24,
+      "shade_air_temp_max": 44,
+      "shade_air_temp_min": 7
+    }
+  ]
