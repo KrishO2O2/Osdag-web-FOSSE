@@ -1,61 +1,231 @@
-// ============================================================
-// useGroupDesign.js — Group Design Module
-// Manages API call state: loading, error, result
-// Also handles location IRC data lookup
-// ============================================================
+import { useEffect, useMemo, useState } from "react";
+import {
+  fetchMasterData,
+  fetchLocationByCity,
+  checkGeometryApi,
+  submitGroupDesignApi,
+  normalizeApiError,
+} from "../utils/groupDesignApi";
 
-import { useState } from 'react';
-import { submitGroupDesign, fetchLocationData } from '../utils/groupDesignApi';
-import { CITY_IRC_DATA } from '../utils/constants';
+const initialForm = {
+  structure_type: "highway",
+  mode: "location_lookup",
+  city: "",
+  wind_speed: "",
+  seismic_zone: "",
+  zone_factor: "",
+  shade_air_temp_max: "",
+  shade_air_temp_min: "",
+  span: "",
+  carriageway_width: "",
+  footpath: "none",
+  skew_angle: "",
+  girder_spacing: "",
+  number_of_girders: "",
+  deck_overhang_width: "",
+  girder_steel: "",
+  cross_bracing_steel: "",
+  deck_concrete: "",
+};
 
-export function useGroupDesign() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [apiError, setApiError] = useState(null);
+const toFloatOrNull = (v) => (v === "" ? null : parseFloat(v));
+const toIntOrNull = (v) => (v === "" ? null : parseInt(v, 10));
 
-  // Location IRC values populated after Project Location is confirmed
-  const [locationData, setLocationData] = useState(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState(null);
+export default function useGroupDesign() {
+  const [form, setForm] = useState(initialForm);
+  const [masterData, setMasterData] = useState({
+    structure_types: [],
+    footpath_options: [],
+    steel_grades: [],
+    concrete_grades: [],
+    cities: [],
+    location_modes: [],
+  });
 
-  /**
-   * Submits the full form to the backend for calculation.
-   */
-  const submitDesign = async (formState) => {
-    setIsLoading(true);
-    setApiError(null);
-    setResult(null);
+  const [loadingMaster, setLoadingMaster] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [checkingGeometry, setCheckingGeometry] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [submitErrors, setSubmitErrors] = useState({});
+  const [geometryErrors, setGeometryErrors] = useState({});
+  const [globalErrors, setGlobalErrors] = useState([]);
+
+  const [geometryResult, setGeometryResult] = useState(null);
+  const [submitResult, setSubmitResult] = useState(null);
+
+  const isLookupMode = form.mode === "location_lookup";
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setLoadingMaster(true);
+        const data = await fetchMasterData();
+        if (active) setMasterData(data);
+      } catch (e) {
+        const err = normalizeApiError(e);
+        if (active) setGlobalErrors(err.non_field_errors || ["Failed to load master data."]);
+      } finally {
+        if (active) setLoadingMaster(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setField = (name, value) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const setMode = (mode) => {
+    setSubmitErrors({});
+    setGeometryErrors({});
+    setGlobalErrors([]);
+    setGeometryResult(null);
+    setSubmitResult(null);
+
+    setForm((prev) => {
+      if (mode === "location_lookup") {
+        return {
+          ...prev,
+          mode,
+          wind_speed: "",
+          seismic_zone: "",
+          zone_factor: "",
+          shade_air_temp_max: "",
+          shade_air_temp_min: "",
+        };
+      }
+      return { ...prev, mode, city: "" };
+    });
+  };
+
+  const fetchLocation = async () => {
+    if (!form.city) return;
     try {
-      const data = await submitGroupDesign(formState);
-      setResult(data);
-    } catch (err) {
-      setApiError(err.message);
+      setLoadingLocation(true);
+      setGlobalErrors([]);
+      const data = await fetchLocationByCity(form.city);
+      setForm((prev) => ({
+        ...prev,
+        wind_speed: data.wind_speed ?? "",
+        seismic_zone: data.seismic_zone ?? "",
+        zone_factor: data.zone_factor ?? "",
+        shade_air_temp_max: data.shade_air_temp_max ?? "",
+        shade_air_temp_min: data.shade_air_temp_min ?? "",
+      }));
+    } catch (e) {
+      const err = normalizeApiError(e);
+      setGlobalErrors(err.non_field_errors || ["Failed to fetch location values."]);
     } finally {
-      setIsLoading(false);
+      setLoadingLocation(false);
     }
   };
 
-  /**
-   * Looks up IRC location data. First checks the hardcoded CITY_DATA
-   * for the 5 major cities; falls back to backend API for others.
-   */
-  
-  const clearResult = () => {
-    setResult(null);
-    setApiError(null);
+  const geometryPayload = useMemo(
+    () => ({
+      carriageway_width: toFloatOrNull(form.carriageway_width),
+      girder_spacing: toFloatOrNull(form.girder_spacing),
+      number_of_girders: toIntOrNull(form.number_of_girders),
+      deck_overhang_width: toFloatOrNull(form.deck_overhang_width),
+    }),
+    [form.carriageway_width, form.girder_spacing, form.number_of_girders, form.deck_overhang_width]
+  );
+
+  const checkGeometry = async () => {
+    try {
+      setCheckingGeometry(true);
+      setGeometryErrors({});
+      setGlobalErrors([]);
+      const data = await checkGeometryApi(geometryPayload);
+      setGeometryResult(data);
+      setForm((prev) => ({
+        ...prev,
+        girder_spacing: data.girder_spacing !== undefined ? String(data.girder_spacing) : prev.girder_spacing,
+        number_of_girders: data.number_of_girders !== undefined ? String(data.number_of_girders) : prev.number_of_girders,
+        deck_overhang_width:
+          data.deck_overhang_width !== undefined ? String(data.deck_overhang_width) : prev.deck_overhang_width,
+      }));
+    } catch (e) {
+      const err = normalizeApiError(e);
+      setGeometryErrors(err);
+      if (err.non_field_errors) setGlobalErrors(err.non_field_errors);
+    } finally {
+      setCheckingGeometry(false);
+    }
+  };
+
+  const buildSubmitPayload = () => {
+    const project_location =
+      form.mode === "location_lookup"
+        ? { mode: "location_lookup", city: form.city }
+        : {
+            mode: "custom_loading",
+            wind_speed: toFloatOrNull(form.wind_speed),
+            seismic_zone: form.seismic_zone,
+            zone_factor: toFloatOrNull(form.zone_factor),
+            shade_air_temp_max: toFloatOrNull(form.shade_air_temp_max),
+            shade_air_temp_min: toFloatOrNull(form.shade_air_temp_min),
+          };
+
+    return {
+      structure_type: form.structure_type,
+      project_location,
+      geometric_inputs: {
+        span: toFloatOrNull(form.span),
+        carriageway_width: toFloatOrNull(form.carriageway_width),
+        footpath: form.footpath,
+        skew_angle: toFloatOrNull(form.skew_angle),
+        girder_spacing: toFloatOrNull(form.girder_spacing),
+        number_of_girders: toIntOrNull(form.number_of_girders),
+        deck_overhang_width: toFloatOrNull(form.deck_overhang_width),
+      },
+      material_inputs: {
+        girder_steel: form.girder_steel,
+        cross_bracing_steel: form.cross_bracing_steel,
+        deck_concrete: form.deck_concrete,
+      },
+    };
+  };
+
+  const submit = async () => {
+    try {
+      setSubmitting(true);
+      setSubmitErrors({});
+      setGlobalErrors([]);
+      const payload = buildSubmitPayload();
+      const data = await submitGroupDesignApi(payload);
+      setSubmitResult(data);
+      return { ok: true, data };
+    } catch (e) {
+      const err = normalizeApiError(e);
+      setSubmitErrors(err);
+      if (err.non_field_errors) setGlobalErrors(err.non_field_errors);
+      return { ok: false, errors: err };
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return {
-    // Submission
-    isLoading,
-    result,
-    apiError,
-    submitDesign,
-    clearResult,
-
-    // Location lookup
-    locationData,
-    locationLoading,
-    locationError,
+    form,
+    masterData,
+    loadingMaster,
+    loadingLocation,
+    checkingGeometry,
+    submitting,
+    submitErrors,
+    geometryErrors,
+    globalErrors,
+    geometryResult,
+    submitResult,
+    isLookupMode,
+    setField,
+    setMode,
+    fetchLocation,
+    checkGeometry,
+    submit,
   };
 }
