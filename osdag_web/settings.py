@@ -73,6 +73,7 @@ INSTALLED_APPS = [
 
     # DRF
     'rest_framework',
+    'group_design',
 
     # simpleJWT
     'rest_framework_simplejwt',

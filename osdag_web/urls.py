@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import (
 )
 
 urlpatterns = [
+    path('api/group-design/', include('group_design.urls')),
     path('admin/', admin.site.urls),
     path('', include('osdag.urls')),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
