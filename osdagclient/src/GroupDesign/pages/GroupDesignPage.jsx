@@ -9,24 +9,24 @@ export default function GroupDesignPage() {
 
   return (
     <div className="gd-root">
-      {/* Left panel (scroll container) */}
       <div className="gd-left-panel">
         <InputPanel gd={gd} />
       </div>
 
-      {/* Right panel */}
       <div className="gd-right-panel" style={{ flex: 1, minWidth: 0 }}>
-      <BridgeDiagramPanel
-        carriageway_width={gd.form.carriageway_width}
-        number_of_girders={gd.form.number_of_girders}
-        girder_spacing={gd.form.girder_spacing}
-        deck_overhang_width={gd.form.deck_overhang_width}
-        footpath={gd.form.footpath}
-        span={gd.form.span}
-        girder_steel={gd.form.girder_steel}
-        cross_bracing_steel={gd.form.cross_bracing_steel}
-        deck_concrete={gd.form.deck_concrete}
-      />
+        <BridgeDiagramPanel
+          carriageway_width={gd.form.carriageway_width}
+          number_of_girders={gd.form.number_of_girders}
+          girder_spacing={gd.form.girder_spacing}
+          deck_overhang_width={gd.form.deck_overhang_width}
+          footpath={gd.form.footpath}
+          span={gd.form.span}
+          girder_steel={gd.form.girder_steel}
+          cross_bracing_steel={gd.form.cross_bracing_steel}
+          deck_concrete={gd.form.deck_concrete}
+          recentChangeKey={gd.recentChangeKey}
+          flashToken={gd.flashToken}
+        />
       </div>
     </div>
   );

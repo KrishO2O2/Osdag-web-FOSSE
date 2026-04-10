@@ -135,6 +135,8 @@ export default function InputPanel({ gd }) {
     onDistrictChange,
     checkGeometry,
     submit,
+    resetForm,
+    loadSampleData,
   } = gd;
 
   const canDownloadReport = submitResult?.success === true || geometryResult != null;
@@ -164,7 +166,7 @@ export default function InputPanel({ gd }) {
     try {
       localStorage.setItem(ACCORDION_STORAGE_KEY, JSON.stringify(openMap));
     } catch {
-      // ignore storage failures
+      // ignore
     }
   }, [openMap]);
 
@@ -228,9 +230,10 @@ export default function InputPanel({ gd }) {
     ) {
       return "";
     }
-    return `(${overallBridgeWidth.toFixed(1)} - ${currentOverhang.toFixed(1)}) / ${currentSpacing.toFixed(
-      1
-    )} = ${((overallBridgeWidth - currentOverhang) / currentSpacing).toFixed(2)}`;
+    return `(${overallBridgeWidth.toFixed(1)} - ${currentOverhang.toFixed(1)}) / ${currentSpacing.toFixed(1)} = ${(
+      (overallBridgeWidth - currentOverhang) /
+      currentSpacing
+    ).toFixed(2)}`;
   }, [overallBridgeWidth, currentSpacing, currentOverhang]);
 
   const geometryPopupError = useMemo(() => {
@@ -246,8 +249,8 @@ export default function InputPanel({ gd }) {
     if (Number.isFinite(currentSpacing) && currentSpacing <= 0) {
       return "Girder spacing must be greater than 0.";
     }
-    if (Number.isFinite(currentGirders) && currentGirders <= 0) {
-      return "Number of girders must be at least 1.";
+    if (Number.isFinite(currentGirders) && currentGirders < 2) {
+      return "Number of girders must be at least 2.";
     }
     return "";
   }, [overallBridgeWidth, currentSpacing, currentGirders, currentOverhang]);
@@ -273,25 +276,23 @@ export default function InputPanel({ gd }) {
 
     const setIntField = (name, value) => {
       if (!Number.isFinite(value)) return;
-      const next = Math.max(1, Math.round(value));
+      const next = Math.max(2, Math.round(value));
       setField(name, String(next));
     };
 
-    // Screening-task equation:
-    // (Overall Width - Overhang) / Spacing = No. of Girders
     if (field === "girder_spacing") {
-      if (Number.isFinite(spacing) && spacing > 0 && Number.isFinite(girders) && girders > 0) {
+      if (Number.isFinite(spacing) && spacing > 0 && Number.isFinite(girders) && girders >= 2) {
         const nextOverhang = overallBridgeWidth - spacing * girders;
         setFloatField("deck_overhang_width", nextOverhang);
       }
     } else if (field === "number_of_girders") {
-      if (Number.isFinite(spacing) && spacing > 0 && Number.isFinite(girders) && girders > 0) {
+      if (Number.isFinite(spacing) && spacing > 0 && Number.isFinite(girders) && girders >= 2) {
         const nextOverhang = overallBridgeWidth - spacing * girders;
         setFloatField("deck_overhang_width", nextOverhang);
       }
     } else if (field === "deck_overhang_width") {
       if (Number.isFinite(overhang) && overhang >= 0) {
-        if (Number.isFinite(girders) && girders > 0) {
+        if (Number.isFinite(girders) && girders >= 2) {
           const nextSpacing = (overallBridgeWidth - overhang) / girders;
           if (nextSpacing > 0) setFloatField("girder_spacing", nextSpacing);
         } else if (Number.isFinite(spacing) && spacing > 0) {
@@ -303,6 +304,11 @@ export default function InputPanel({ gd }) {
   };
 
   if (loadingMaster) return <div className="gd-tab-content">Loading master data...</div>;
+
+  const locationSummary =
+    form.mode === "custom_loading"
+      ? "Custom loading parameters"
+      : [form.state, form.district].filter(Boolean).join(" / ") || "Location lookup";
 
   return (
     <>
@@ -377,11 +383,7 @@ export default function InputPanel({ gd }) {
                 <ErrorText msg={pick(submitErrors, ["structure_type"])} label="Structure Type" />
               </div>
 
-              {isOtherStructure && (
-                <div className="gd-disabled-note">
-                  Other structures not included.
-                </div>
-              )}
+              {isOtherStructure && <div className="gd-disabled-note">Other structures not included.</div>}
             </div>
 
             {!isOtherStructure && (
@@ -433,16 +435,14 @@ export default function InputPanel({ gd }) {
                           onChange={(e) => onDistrictChange(e.target.value)}
                           disabled={!form.state || loadingLocation}
                         >
-                          <option value="">
-                            {loadingLocation ? "Loading districts..." : "Select district"}
-                          </option>
+                          <option value="">{loadingLocation ? "Loading districts..." : "Select district"}</option>
                           {(districts || []).map((d) => (
                             <option key={d} value={d}>
                               {d}
                             </option>
                           ))}
                         </select>
-                        <ErrorText msg={pick(submitErrors, ["project_location", "city"])} label="District" />
+                        <ErrorText msg={pick(submitErrors, ["project_location", "district"])} label="District" />
                       </div>
                     </>
                   ) : (
@@ -468,18 +468,6 @@ export default function InputPanel({ gd }) {
                     <SummaryItem label="Shade Air Temp Max" value={form.shade_air_temp_max} green />
                     <SummaryItem label="Shade Air Temp Min" value={form.shade_air_temp_min} green />
                   </div>
-
-                  <ErrorText msg={pick(submitErrors, ["project_location", "wind_speed"])} label="Wind Speed" />
-                  <ErrorText msg={pick(submitErrors, ["project_location", "seismic_zone"])} label="Seismic Zone" />
-                  <ErrorText msg={pick(submitErrors, ["project_location", "zone_factor"])} label="Zone Factor" />
-                  <ErrorText
-                    msg={pick(submitErrors, ["project_location", "shade_air_temp_max"])}
-                    label="Shade Air Temp Max"
-                  />
-                  <ErrorText
-                    msg={pick(submitErrors, ["project_location", "shade_air_temp_min"])}
-                    label="Shade Air Temp Min"
-                  />
                 </Accordion>
 
                 <Accordion
@@ -491,11 +479,7 @@ export default function InputPanel({ gd }) {
                 >
                   <div className="gd-field">
                     <label className="gd-label">Span (m)</label>
-                    <input
-                      className="gd-input"
-                      value={form.span}
-                      onChange={(e) => setField("span", e.target.value)}
-                    />
+                    <input className="gd-input" value={form.span} onChange={(e) => setField("span", e.target.value)} />
                     <ErrorText msg={pick(submitErrors, ["geometric_inputs", "span"])} label="Span" />
                   </div>
 
@@ -514,18 +498,13 @@ export default function InputPanel({ gd }) {
 
                   <div className="gd-field">
                     <label className="gd-label">Footpath</label>
-                    <select
-                      className="gd-select"
-                      value={form.footpath}
-                      onChange={(e) => setField("footpath", e.target.value)}
-                    >
+                    <select className="gd-select" value={form.footpath} onChange={(e) => setField("footpath", e.target.value)}>
                       {(masterData.footpath_options || []).map((f) => (
                         <option key={f.value} value={f.value}>
                           {f.label}
                         </option>
                       ))}
                     </select>
-                    <ErrorText msg={pick(submitErrors, ["geometric_inputs", "footpath"])} label="Footpath" />
                   </div>
 
                   <div className="gd-field">
@@ -592,11 +571,7 @@ export default function InputPanel({ gd }) {
                 >
                   <div className="gd-field">
                     <label className="gd-label">Girder Steel</label>
-                    <select
-                      className="gd-select"
-                      value={form.girder_steel}
-                      onChange={(e) => setField("girder_steel", e.target.value)}
-                    >
+                    <select className="gd-select" value={form.girder_steel} onChange={(e) => setField("girder_steel", e.target.value)}>
                       <option value="" disabled>
                         Select
                       </option>
@@ -606,7 +581,6 @@ export default function InputPanel({ gd }) {
                         </option>
                       ))}
                     </select>
-                    <ErrorText msg={pick(submitErrors, ["material_inputs", "girder_steel"])} label="Girder Steel" />
                   </div>
 
                   <div className="gd-field">
@@ -625,19 +599,11 @@ export default function InputPanel({ gd }) {
                         </option>
                       ))}
                     </select>
-                    <ErrorText
-                      msg={pick(submitErrors, ["material_inputs", "cross_bracing_steel"])}
-                      label="Cross Bracing Steel"
-                    />
                   </div>
 
                   <div className="gd-field">
                     <label className="gd-label">Deck Concrete</label>
-                    <select
-                      className="gd-select"
-                      value={form.deck_concrete}
-                      onChange={(e) => setField("deck_concrete", e.target.value)}
-                    >
+                    <select className="gd-select" value={form.deck_concrete} onChange={(e) => setField("deck_concrete", e.target.value)}>
                       <option value="" disabled>
                         Select
                       </option>
@@ -647,11 +613,24 @@ export default function InputPanel({ gd }) {
                         </option>
                       ))}
                     </select>
-                    <ErrorText msg={pick(submitErrors, ["material_inputs", "deck_concrete"])} label="Deck Concrete" />
                   </div>
                 </Accordion>
 
-                <button type="submit" className="gd-btn gd-btn-green" disabled={submitting}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+                  <button type="button" className="gd-btn gd-btn-yellow" onClick={loadSampleData}>
+                    Load Sample Example
+                  </button>
+                  <button
+                    type="button"
+                    className="gd-btn gd-btn-orange"
+                    onClick={resetForm}
+                    style={{ background: "#533019", borderColor: "#a95d1c", color: "#ffd8b0" }}
+                  >
+                    Reset Form
+                  </button>
+                </div>
+
+                <button type="submit" className="gd-btn gd-btn-green" disabled={submitting} style={{ marginTop: 10 }}>
                   {submitting ? "Submitting..." : "Submit"}
                 </button>
 
@@ -675,8 +654,30 @@ export default function InputPanel({ gd }) {
                 {reportError && <div className="gd-error">{reportError}</div>}
 
                 {submitResult?.success && (
-                  <div className="gd-modal-info" style={{ marginTop: 10 }}>
-                    {submitResult.message || "Submitted successfully."}
+                  <div
+                    style={{
+                      marginTop: 12,
+                      border: "1px solid #2f7a45",
+                      background: "#10281a",
+                      borderRadius: 8,
+                      padding: 12,
+                    }}
+                  >
+                    <div style={{ color: "#76ffa4", fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+                      Inputs validated successfully
+                    </div>
+                    <div style={{ color: "#c9f7d8", fontSize: 13, marginBottom: 10 }}>
+                      {submitResult.message || "Group Design inputs validated successfully."}
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+                      <SummaryItem label="Location Mode" value={form.mode === "custom_loading" ? "Custom loading" : "Location lookup"} green />
+                      <SummaryItem label="Location / Source" value={locationSummary} green />
+                      <SummaryItem label="Span / Width" value={`${form.span || "—"} m / ${form.carriageway_width || "—"} m`} />
+                      <SummaryItem label="Geometry Checked" value={geometryResult ? "Yes" : "Not yet"} />
+                      <SummaryItem label="Materials" value={`${form.girder_steel || "—"}, ${form.cross_bracing_steel || "—"}, ${form.deck_concrete || "—"}`} />
+                      <SummaryItem label="Ready for next stage" value="Yes" green />
+                    </div>
                   </div>
                 )}
               </>
@@ -702,32 +703,17 @@ export default function InputPanel({ gd }) {
       >
         <div className="gd-field">
           <label className="gd-label">Basic Wind Speed (m/s)</label>
-          <input
-            className="gd-input"
-            value={form.wind_speed}
-            onChange={(e) => setField("wind_speed", e.target.value)}
-          />
-          <ErrorText msg={pick(submitErrors, ["project_location", "wind_speed"])} label="Wind Speed" />
+          <input className="gd-input" value={form.wind_speed} onChange={(e) => setField("wind_speed", e.target.value)} />
         </div>
 
         <div className="gd-field">
           <label className="gd-label">Seismic Zone</label>
-          <input
-            className="gd-input"
-            value={form.seismic_zone}
-            onChange={(e) => setField("seismic_zone", e.target.value)}
-          />
-          <ErrorText msg={pick(submitErrors, ["project_location", "seismic_zone"])} label="Seismic Zone" />
+          <input className="gd-input" value={form.seismic_zone} onChange={(e) => setField("seismic_zone", e.target.value)} />
         </div>
 
         <div className="gd-field">
           <label className="gd-label">Zone Factor</label>
-          <input
-            className="gd-input"
-            value={form.zone_factor}
-            onChange={(e) => setField("zone_factor", e.target.value)}
-          />
-          <ErrorText msg={pick(submitErrors, ["project_location", "zone_factor"])} label="Zone Factor" />
+          <input className="gd-input" value={form.zone_factor} onChange={(e) => setField("zone_factor", e.target.value)} />
         </div>
 
         <div className="gd-field">
@@ -737,10 +723,6 @@ export default function InputPanel({ gd }) {
             value={form.shade_air_temp_max}
             onChange={(e) => setField("shade_air_temp_max", e.target.value)}
           />
-          <ErrorText
-            msg={pick(submitErrors, ["project_location", "shade_air_temp_max"])}
-            label="Shade Air Temp Max"
-          />
         </div>
 
         <div className="gd-field">
@@ -749,10 +731,6 @@ export default function InputPanel({ gd }) {
             className="gd-input"
             value={form.shade_air_temp_min}
             onChange={(e) => setField("shade_air_temp_min", e.target.value)}
-          />
-          <ErrorText
-            msg={pick(submitErrors, ["project_location", "shade_air_temp_min"])}
-            label="Shade Air Temp Min"
           />
         </div>
       </Modal>
@@ -783,10 +761,7 @@ export default function InputPanel({ gd }) {
             value={form.girder_spacing}
             onChange={(e) => setAdditionalGeometry("girder_spacing", e.target.value)}
           />
-          <ErrorText
-            msg={first(geometryErrors.girder_spacing) || pick(submitErrors, ["geometric_inputs", "girder_spacing"])}
-            label="Girder Spacing"
-          />
+          <ErrorText msg={first(geometryErrors.girder_spacing)} label="Girder Spacing" />
         </div>
 
         <div className="gd-field">
@@ -796,10 +771,7 @@ export default function InputPanel({ gd }) {
             value={form.number_of_girders}
             onChange={(e) => setAdditionalGeometry("number_of_girders", e.target.value)}
           />
-          <ErrorText
-            msg={first(geometryErrors.number_of_girders) || pick(submitErrors, ["geometric_inputs", "number_of_girders"])}
-            label="No. of Girders"
-          />
+          <ErrorText msg={first(geometryErrors.number_of_girders)} label="No. of Girders" />
         </div>
 
         <div className="gd-field">
@@ -809,10 +781,7 @@ export default function InputPanel({ gd }) {
             value={form.deck_overhang_width}
             onChange={(e) => setAdditionalGeometry("deck_overhang_width", e.target.value)}
           />
-          <ErrorText
-            msg={first(geometryErrors.deck_overhang_width) || pick(submitErrors, ["geometric_inputs", "deck_overhang_width"])}
-            label="Deck Overhang Width"
-          />
+          <ErrorText msg={first(geometryErrors.deck_overhang_width)} label="Deck Overhang Width" />
         </div>
 
         <div className="gd-summary-grid">
