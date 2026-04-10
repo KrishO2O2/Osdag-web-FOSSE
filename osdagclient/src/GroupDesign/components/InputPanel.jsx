@@ -1,5 +1,14 @@
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useReportDownload } from "../hooks/useReportDownload";
+import Accordion from "./Accordion";
+import {
+  isLocationComplete,
+  isGeometryComplete,
+  isAdditionalGeometryComplete,
+  isMaterialComplete,
+} from "../utils/accordionCompletion";
+
+const ACCORDION_STORAGE_KEY = "gd_accordion_open_state_v1";
 
 function first(v) {
   if (!v) return "";
@@ -35,8 +44,33 @@ function ErrorText({ msg, label }) {
   return <div className="gd-error">{t}</div>;
 }
 
+function getInitialAccordionState() {
+  const fallback = {
+    location: true,
+    geometry: false,
+    additional: false,
+    material: false,
+  };
+
+  try {
+    const raw = localStorage.getItem(ACCORDION_STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+
+    return {
+      location: Boolean(parsed?.location),
+      geometry: Boolean(parsed?.geometry),
+      additional: Boolean(parsed?.additional),
+      material: Boolean(parsed?.material),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 export default function InputPanel({ gd }) {
   const { generateReport, generating, error: reportError } = useReportDownload();
+
   const {
     form,
     masterData,
@@ -60,6 +94,65 @@ export default function InputPanel({ gd }) {
     submit,
   } = gd;
 
+  const canDownloadReport = submitResult?.success === true || geometryResult != null;
+
+  const locationDone = isLocationComplete(form);
+  const geometryDone = isGeometryComplete(form);
+  const additionalDone = isAdditionalGeometryComplete(form, geometryResult);
+  const materialDone = isMaterialComplete(form);
+
+  // 3) completion summary count
+  const completionCount = useMemo(() => {
+    return [locationDone, geometryDone, additionalDone, materialDone].filter(Boolean).length;
+  }, [locationDone, geometryDone, additionalDone, materialDone]);
+
+  // controlled accordions + 2) persisted state
+  const [openMap, setOpenMap] = useState(getInitialAccordionState);
+
+  const toggleAccordion = (id) => {
+    setOpenMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // persist accordion state whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACCORDION_STORAGE_KEY, JSON.stringify(openMap));
+    } catch {
+      // ignore storage failures
+    }
+  }, [openMap]);
+
+  // 1) auto-open next accordion when previous becomes complete
+  const prevRef = useRef({
+    locationDone: false,
+    geometryDone: false,
+    additionalDone: false,
+  });
+
+  useEffect(() => {
+    setOpenMap((prev) => {
+      let next = prev;
+      let changed = false;
+
+      if (locationDone && !prevRef.current.locationDone && !prev.geometry) {
+        next = { ...next, geometry: true };
+        changed = true;
+      }
+      if (geometryDone && !prevRef.current.geometryDone && !prev.additional) {
+        next = { ...next, additional: true };
+        changed = true;
+      }
+      if (additionalDone && !prevRef.current.additionalDone && !prev.material) {
+        next = { ...next, material: true };
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+
+    prevRef.current = { locationDone, geometryDone, additionalDone };
+  }, [locationDone, geometryDone, additionalDone]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     await submit();
@@ -76,8 +169,27 @@ export default function InputPanel({ gd }) {
       ))}
 
       <div className="gd-section">
-        <div className="gd-section-title">Type of Structure</div>
-        <div className="gd-field">
+        <div
+          className="gd-section-header-row"
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}
+        >
+          <div className="gd-section-title" style={{ marginBottom: 0 }}>
+            Type of Structure
+          </div>
+          <div
+            className="gd-modal-note"
+            style={{
+              marginTop: 0,
+              fontWeight: 700,
+              color: completionCount === 4 ? "#6dff97" : "#9db0d8",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {completionCount}/4 complete
+          </div>
+        </div>
+
+        <div className="gd-field" style={{ marginTop: 10 }}>
           <label className="gd-label">Structure Type</label>
           <select
             className="gd-select"
@@ -94,9 +206,13 @@ export default function InputPanel({ gd }) {
         </div>
       </div>
 
-      <div className="gd-section">
-        <div className="gd-section-title">Project Location</div>
-
+      <Accordion
+        id="location"
+        title="Project Location"
+        isComplete={locationDone}
+        open={openMap.location}
+        onToggle={toggleAccordion}
+      >
         {(masterData.location_modes || []).map((m) => (
           <label key={m.value} className="gd-checkbox-label">
             <input
@@ -206,11 +322,15 @@ export default function InputPanel({ gd }) {
             label="Shade Air Temp Min"
           />
         </div>
-      </div>
+      </Accordion>
 
-      <div className="gd-section">
-        <div className="gd-section-title">Geometric Inputs</div>
-
+      <Accordion
+        id="geometry"
+        title="Geometric Inputs"
+        isComplete={geometryDone}
+        open={openMap.geometry}
+        onToggle={toggleAccordion}
+      >
         <div className="gd-field">
           <label className="gd-label">Span (m)</label>
           <input className="gd-input" value={form.span} onChange={(e) => setField("span", e.target.value)} />
@@ -251,11 +371,19 @@ export default function InputPanel({ gd }) {
           />
           <ErrorText msg={pick(submitErrors, ["geometric_inputs", "skew_angle"])} label="Skew Angle" />
         </div>
-      </div>
+      </Accordion>
 
-      <div className="gd-section">
+      <Accordion
+        id="additional"
+        title="Modify Additional Geometry"
+        isComplete={additionalDone}
+        open={openMap.additional}
+        onToggle={toggleAccordion}
+      >
         <div className="gd-section-header-row">
-          <div className="gd-section-title">Modify Additional Geometry</div>
+          <div className="gd-section-title" style={{ marginBottom: 0, borderBottom: "none", paddingBottom: 0 }}>
+            Modify Additional Geometry
+          </div>
           <button
             type="button"
             className="gd-btn gd-btn-sm gd-btn-yellow"
@@ -266,7 +394,7 @@ export default function InputPanel({ gd }) {
           </button>
         </div>
 
-        <div className="gd-field">
+        <div className="gd-field" style={{ marginTop: 10 }}>
           <label className="gd-label">Girder Spacing (m)</label>
           <input
             className="gd-input"
@@ -310,11 +438,15 @@ export default function InputPanel({ gd }) {
 
         <ErrorText msg={first(geometryErrors.non_field_errors)} label="Geometry" />
         {geometryResult?.formula_check && <div className="gd-modal-note">{geometryResult.formula_check}</div>}
-      </div>
+      </Accordion>
 
-      <div className="gd-section">
-        <div className="gd-section-title">Material Inputs</div>
-
+      <Accordion
+        id="material"
+        title="Material Inputs"
+        isComplete={materialDone}
+        open={openMap.material}
+        onToggle={toggleAccordion}
+      >
         <div className="gd-field">
           <label className="gd-label">Girder Steel</label>
           <select
@@ -374,7 +506,7 @@ export default function InputPanel({ gd }) {
           </select>
           <ErrorText msg={pick(submitErrors, ["material_inputs", "deck_concrete"])} label="Deck Concrete" />
         </div>
-      </div>
+      </Accordion>
 
       <button type="submit" className="gd-btn gd-btn-green" disabled={submitting}>
         {submitting ? "Submitting..." : "Submit"}
@@ -384,11 +516,18 @@ export default function InputPanel({ gd }) {
         type="button"
         className="gd-btn gd-btn-green"
         onClick={() => generateReport(gd)}
-        disabled={generating}
+        disabled={generating || !canDownloadReport}
         style={{ marginTop: 8 }}
+        title={canDownloadReport ? "Download Design Report" : "Run Check Geometry or successful Submit first"}
       >
         {generating ? "Generating PDF..." : "Download Design Report"}
       </button>
+
+      {!canDownloadReport && (
+        <div className="gd-modal-note" style={{ marginTop: 6 }}>
+          Run <b>Check Geometry</b> or complete a successful <b>Submit</b> to enable PDF download.
+        </div>
+      )}
 
       {reportError && <div className="gd-error">{reportError}</div>}
 
@@ -400,7 +539,3 @@ export default function InputPanel({ gd }) {
     </form>
   );
 }
-
-
-
-
