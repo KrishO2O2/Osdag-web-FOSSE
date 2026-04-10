@@ -1,24 +1,21 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import bridgeImage from "../assets/bridge_cross_section.jpg";
+import { estimateBridgeBOM } from "../utils/bomEstimator";
 
 const CLR = {
   deck: "#2b5f98",
   deckS: "#5d8fc5",
   deckTop: "#214f80",
-
   fp: "#2a4f78",
   fpS: "#4e7fb0",
   fpTxt: "#eaf6ff",
-
   gdr: "#1e3f66",
   gdrS: "#3d6b9a",
   web: "#24496f",
-
   dimGreen: "#39a96b",
   dimBlue: "#5aa6e8",
   dimPurple: "#9c8ee6",
   dimGray: "#6f8fae",
-
   muted: "#54708a",
   iText: "#234c73",
   iLegend: "#1d466d",
@@ -37,23 +34,19 @@ const FL_H = 7;
 const WEB_H = 54;
 const WEB_W = 7;
 
-// ----------------------- Reference overlay -----------------------
 function Pill({ children, color, style = {} }) {
   return (
     <div
       style={{
         position: "absolute",
-        background: "rgba(8,20,48,0.88)",
-        border: `1px solid ${color}`,
+        background: color,
+        color: "#fff",
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "3px 8px",
         borderRadius: 3,
-        color,
-        fontSize: 11,
-        fontWeight: 600,
-        padding: "2px 8px",
-        pointerEvents: "none",
         whiteSpace: "nowrap",
-        letterSpacing: "0.2px",
-        transform: "translateX(-50%)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
         ...style,
       }}
     >
@@ -64,39 +57,63 @@ function Pill({ children, color, style = {} }) {
 
 function DimBar({ leftPct, rightPct, topPct, color }) {
   const b = { position: "absolute", pointerEvents: "none" };
+
   return (
     <>
       <div
         style={{
           ...b,
-          left: leftPct,
-          right: `calc(100% - ${rightPct})`,
-          top: topPct,
-          height: 1,
+          left: `${leftPct}%`,
+          right: `${rightPct}%`,
+          top: `${topPct}%`,
+          height: 1.5,
           background: color,
-          transform: "translateY(-50%)",
         }}
       />
       <div
         style={{
           ...b,
-          left: leftPct,
-          top: topPct,
-          width: 1,
-          height: 8,
+          left: `${leftPct}%`,
+          top: `calc(${topPct}% - 7px)`,
+          width: 1.5,
+          height: 14,
           background: color,
-          transform: "translate(0,-50%)",
         }}
       />
       <div
         style={{
           ...b,
-          left: rightPct,
-          top: topPct,
-          width: 1,
-          height: 8,
+          right: `${rightPct}%`,
+          top: `calc(${topPct}% - 7px)`,
+          width: 1.5,
+          height: 14,
           background: color,
-          transform: "translate(-1px,-50%)",
+        }}
+      />
+      <div
+        style={{
+          ...b,
+          left: `${leftPct}%`,
+          top: `calc(${topPct}% - 3px)`,
+          width: 0,
+          height: 0,
+          borderTop: "4px solid transparent",
+          borderBottom: "4px solid transparent",
+          borderRight: `6px solid ${color}`,
+          transform: "translateX(-6px)",
+        }}
+      />
+      <div
+        style={{
+          ...b,
+          right: `${rightPct}%`,
+          top: `calc(${topPct}% - 3px)`,
+          width: 0,
+          height: 0,
+          borderTop: "4px solid transparent",
+          borderBottom: "4px solid transparent",
+          borderLeft: `6px solid ${color}`,
+          transform: "translateX(6px)",
         }}
       />
     </>
@@ -114,74 +131,124 @@ function ReferenceOverlay({
   const gs = parseFloat(girder_spacing) || 0;
   const dow = parseFloat(deck_overhang_width) || 0;
 
-  if (cw === 0 && ng === 0) return null;
+  if (cw === 0 && ng === 0 && dow === 0) return null;
 
   return (
     <>
       {cw > 0 && (
         <>
-          <DimBar leftPct="21%" rightPct="79%" topPct="27%" color="#4caf50" />
-          <Pill color="#4caf50" style={{ left: "50%", top: "17%" }}>
-            Carriageway Width = {cw.toFixed(2)} m
+          <DimBar leftPct={22} rightPct={22} topPct={11.5} color={CLR.dimBlue} />
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "10.1%",
+              transform: "translateX(-50%)",
+              color: CLR.dimBlue,
+              fontSize: 12,
+              fontWeight: 700,
+              background: "rgba(255,255,255,0.86)",
+              padding: "1px 6px",
+              borderRadius: 3,
+            }}
+          >
+            Carriageway Width
+          </div>
+
+          <Pill
+            color={CLR.dimGreen}
+            style={{ left: "50%", top: "18.5%", transform: "translateX(-50%)" }}
+          >
+            {`Carriageway Width = ${cw.toFixed(2)} m`}
           </Pill>
         </>
       )}
 
       {dow > 0 && (
         <>
-          <DimBar leftPct="7%" rightPct="21%" topPct="47%" color="#9a8ad8" />
+          <DimBar leftPct={9.8} rightPct={78.5} topPct={61.8} color={CLR.dimBlue} />
+          <DimBar leftPct={78.5} rightPct={10.2} topPct={61.8} color={CLR.dimBlue} />
+
           <div
             style={{
               position: "absolute",
-              left: "3%",
-              top: "39%",
-              background: "rgba(8,20,48,0.88)",
-              border: "1px solid #9a8ad8",
+              left: "13%",
+              top: "65.3%",
+              color: CLR.dimBlue,
+              fontSize: 11,
+              fontWeight: 700,
+              background: "rgba(255,255,255,0.86)",
+              padding: "1px 5px",
               borderRadius: 3,
-              color: "#9a8ad8",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: "2px 6px",
-              pointerEvents: "none",
-              whiteSpace: "nowrap",
             }}
           >
-            {dow.toFixed(1)} m
+            Overhang Width
           </div>
 
-          <DimBar leftPct="79%" rightPct="93%" topPct="47%" color="#9a8ad8" />
           <div
             style={{
               position: "absolute",
-              right: "3%",
-              top: "39%",
-              background: "rgba(8,20,48,0.88)",
-              border: "1px solid #9a8ad8",
+              right: "13%",
+              top: "65.3%",
+              color: CLR.dimBlue,
+              fontSize: 11,
+              fontWeight: 700,
+              background: "rgba(255,255,255,0.86)",
+              padding: "1px 5px",
               borderRadius: 3,
-              color: "#9a8ad8",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: "2px 6px",
-              pointerEvents: "none",
-              whiteSpace: "nowrap",
             }}
           >
-            {dow.toFixed(1)} m
+            Overhang Width
           </div>
+
+          <Pill color={CLR.dimPurple} style={{ left: "5.5%", top: "41%" }}>
+            {`${dow.toFixed(1)} m`}
+          </Pill>
+
+          <Pill color={CLR.dimPurple} style={{ right: "5.5%", top: "41%" }}>
+            {`${dow.toFixed(1)} m`}
+          </Pill>
         </>
       )}
 
       {ng > 0 && gs > 0 && (
-        <Pill color="#5a9ad8" style={{ left: "50%", top: "63%" }}>
-          {ng} Girders Spaced at {gs.toFixed(1)} m
-        </Pill>
+        <>
+          <DimBar leftPct={19.5} rightPct={19.5} topPct={78.4} color={CLR.dimBlue} />
+          <Pill
+            color={CLR.dimBlue}
+            style={{ left: "50%", top: "73%", transform: "translateX(-50%)" }}
+          >
+            {`${ng} Girders Spaced at ${gs.toFixed(1)} m`}
+          </Pill>
+
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "79.5%",
+              transform: "translateX(-50%)",
+              color: CLR.dimBlue,
+              fontSize: 11,
+              fontWeight: 700,
+              background: "rgba(255,255,255,0.86)",
+              padding: "1px 6px",
+              borderRadius: 3,
+              textAlign: "center",
+            }}
+          >
+            {`“N” Girders Spaced at Distance “S”`}
+            <br />
+            <span style={{ fontWeight: 600, fontSize: 10 }}>
+              (4 girders shown for clarity)
+            </span>
+          </div>
+        </>
       )}
     </>
   );
 }
 
-// ----------------------- Interactive SVG -----------------------
-function DimLine({ x1, x2, y, label, color, small }) {
+function DimLine({ x1, x2, y, label, color, small = false }) {
   const cx = (x1 + x2) / 2;
   const tk = small ? 4 : 5;
   const fs = small ? 10 : 12;
@@ -189,19 +256,27 @@ function DimLine({ x1, x2, y, label, color, small }) {
 
   return (
     <g>
-      <line x1={x1} y1={y} x2={x2} y2={y} stroke={color} strokeWidth={0.7} />
-      <line x1={x1} y1={y - tk} x2={x1} y2={y + tk} stroke={color} strokeWidth={0.7} />
-      <line x1={x2} y1={y - tk} x2={x2} y2={y + tk} stroke={color} strokeWidth={0.7} />
-      <rect x={cx - lw / 2} y={y - 9} width={lw} height={16} fill="#eaf6ff" opacity={0.9} rx={2} />
+      <line x1={x1} y1={y} x2={x2} y2={y} stroke={color} strokeWidth="1.5" />
+      <line x1={x1} y1={y - tk} x2={x1} y2={y + tk} stroke={color} strokeWidth="1.3" />
+      <line x1={x2} y1={y - tk} x2={x2} y2={y + tk} stroke={color} strokeWidth="1.3" />
+      <polygon points={`${x1},${y} ${x1 + 7},${y - 3.5} ${x1 + 7},${y + 3.5}`} fill={color} />
+      <polygon points={`${x2},${y} ${x2 - 7},${y - 3.5} ${x2 - 7},${y + 3.5}`} fill={color} />
+      <rect
+        x={cx - lw / 2}
+        y={y - fs - 12}
+        rx="4"
+        ry="4"
+        width={lw}
+        height={fs + 8}
+        fill="rgba(255,255,255,0.92)"
+      />
       <text
         x={cx}
-        y={y + 1}
-        fontSize={fs}
-        fill={color}
+        y={y - 8}
         textAnchor="middle"
-        dominantBaseline="central"
-        fontFamily="system-ui,sans-serif"
-        fontWeight={700}
+        fontSize={fs}
+        fontWeight="700"
+        fill={color}
       >
         {label}
       </text>
@@ -210,33 +285,66 @@ function DimLine({ x1, x2, y, label, color, small }) {
 }
 
 function IBeam({ cx, flangeW, deckBot }) {
-  const wT = deckBot + FL_H;
-  const wB = wT + WEB_H;
+  const topY = deckBot + 2;
+  const webTop = topY + FL_H;
+  const botY = webTop + WEB_H;
+
   return (
     <g>
-      <rect x={cx - flangeW / 2} y={deckBot} width={flangeW} height={FL_H} fill={CLR.gdr} stroke={CLR.gdrS} strokeWidth={0.5} rx={1} />
-      <rect x={cx - WEB_W / 2} y={wT} width={WEB_W} height={WEB_H} fill={CLR.web} stroke={CLR.gdrS} strokeWidth={0.5} />
-      <rect x={cx - flangeW / 2} y={wB} width={flangeW} height={FL_H} fill={CLR.gdr} stroke={CLR.gdrS} strokeWidth={0.5} rx={1} />
+      <rect
+        x={cx - flangeW / 2}
+        y={topY}
+        width={flangeW}
+        height={FL_H}
+        rx="1.5"
+        fill={CLR.gdr}
+        stroke={CLR.gdrS}
+      />
+      <rect
+        x={cx - WEB_W / 2}
+        y={webTop}
+        width={WEB_W}
+        height={WEB_H}
+        fill={CLR.web}
+        stroke={CLR.gdrS}
+      />
+      <rect
+        x={cx - flangeW / 2}
+        y={botY}
+        width={flangeW}
+        height={FL_H}
+        rx="1.5"
+        fill={CLR.gdr}
+        stroke={CLR.gdrS}
+      />
     </g>
   );
 }
 
 function MaterialBadge({ x, y, label }) {
   if (!label) return null;
+
   const txt = String(label);
   const w = Math.max(52, txt.length * 6.2 + 14);
+
   return (
     <g>
-      <rect x={x - w / 2} y={y - 9} width={w} height={18} rx={9} fill="#0d1b3e" stroke="#4caf50" strokeWidth={1.1} />
+      <rect
+        x={x - w / 2}
+        y={y - 13}
+        width={w}
+        height={20}
+        rx="10"
+        fill="rgba(255,255,255,0.92)"
+        stroke="#9bc3e2"
+      />
       <text
         x={x}
-        y={y + 0.5}
-        fontSize={9}
-        fill="#7dffac"
+        y={y + 1}
         textAnchor="middle"
-        dominantBaseline="central"
-        fontFamily="system-ui,sans-serif"
-        fontWeight={700}
+        fontSize="10"
+        fontWeight="700"
+        fill={CLR.iText}
       >
         {txt}
       </text>
@@ -260,14 +368,16 @@ function InteractiveSVG({
     const gs = Math.max(0.5, parseFloat(girder_spacing) || 2.5);
     const dow = Math.max(0, parseFloat(deck_overhang_width) || 0);
     const ng = Math.max(2, Math.round(parseFloat(number_of_girders) || 4));
-
     const ow = cw + 5;
     const sc = UW / ow;
+
     const dL = ML;
     const dR = ML + ow * sc;
+
     const fpW = 2.5 * sc;
     const cwL = dL + fpW;
     const cwR = dR - fpW;
+
     const centers = Array.from({ length: ng }, (_, i) => dL + dow * sc + i * gs * sc);
     const flangeW = Math.min(gs * sc * 0.72, 52);
 
@@ -275,7 +385,24 @@ function InteractiveSVG({
     const deckBot = deckY + DECK_H;
     const botBot = deckBot + FL_H + WEB_H + FL_H;
 
-    return { cw, gs, dow, ng, ow, sc, dL, dR, fpW, cwL, cwR, centers, flangeW, deckY, deckBot, botBot };
+    return {
+      cw,
+      gs,
+      dow,
+      ng,
+      ow,
+      sc,
+      dL,
+      dR,
+      fpW,
+      cwL,
+      cwR,
+      centers,
+      flangeW,
+      deckY,
+      deckBot,
+      botBot,
+    };
   }, [carriageway_width, number_of_girders, girder_spacing, deck_overhang_width]);
 
   const { cw, gs, dow, ng, ow, dL, dR, fpW, cwL, cwR, centers, flangeW, deckY, deckBot, botBot } = g;
@@ -289,31 +416,43 @@ function InteractiveSVG({
 
   const deckBadgeX = (dL + dR) / 2;
   const deckBadgeY = deckY + DECK_H / 2 + 0.5;
-
   const girderBadgeX = centers.length ? centers[Math.floor(centers.length / 2)] : deckBadgeX;
   const girderBadgeY = botBot + 13;
-
   const bracingBadgeX = centers.length >= 2 ? (centers[0] + centers[1]) / 2 : deckBadgeX;
   const bracingBadgeY = deckBot + WEB_H / 2 + 7;
 
   return (
     <svg
-      width="100%"
       viewBox={`0 0 ${VW} ${VH}`}
-      role="img"
-      aria-label={`Live bridge cross-section: ${ow.toFixed(1)} m overall, ${ng} girders`}
-      style={{ display: "block" }}
+      width="100%"
+      height="auto"
+      style={{ display: "block", borderRadius: 4, background: "#edf8ff" }}
     >
-      <DimLine x1={dL} x2={dR} y={deckY - 34} label={`${ow.toFixed(1)} m overall`} color="#1e8f5f" />
-      <DimLine x1={cwL} x2={cwR} y={deckY - 18} label={`${cw.toFixed(1)} m carriageway`} color="#2f76b8" />
-      {dow > 0.05 && (
-        <DimLine x1={dL} x2={dL + dow * g.sc} y={deckY - 6} label={`${dow.toFixed(1)} m`} color="#6f5ec7" small />
-      )}
+      <defs>
+        <linearGradient id="deckGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={CLR.deckS} />
+          <stop offset="100%" stopColor={CLR.deck} />
+        </linearGradient>
+        <linearGradient id="fpGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={CLR.fpS} />
+          <stop offset="100%" stopColor={CLR.fp} />
+        </linearGradient>
+      </defs>
+
+      <rect x={dL} y={deckY} width={dR - dL} height={DECK_H} rx="3" fill="url(#deckGrad)" />
+      <rect x={dL} y={deckY} width={dR - dL} height="3" fill={CLR.deckTop} opacity="0.75" />
 
       {hasFpL && (
         <>
-          <rect x={dL} y={deckY - FP_H} width={fpW} height={FP_H} fill={CLR.fp} stroke={CLR.fpS} strokeWidth={0.5} />
-          <text x={dL + fpW / 2} y={deckY - FP_H / 2 + 1} fontSize={10} fill={CLR.fpTxt} textAnchor="middle" dominantBaseline="central" fontFamily="system-ui,sans-serif" fontWeight={700}>
+          <rect x={dL} y={deckY - FP_H} width={fpW} height={FP_H} rx="2" fill="url(#fpGrad)" />
+          <text
+            x={dL + fpW / 2}
+            y={deckY - FP_H / 2 + 4}
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            fill={CLR.fpTxt}
+          >
             FP
           </text>
         </>
@@ -321,15 +460,19 @@ function InteractiveSVG({
 
       {hasFpR && (
         <>
-          <rect x={dR - fpW} y={deckY - FP_H} width={fpW} height={FP_H} fill={CLR.fp} stroke={CLR.fpS} strokeWidth={0.5} />
-          <text x={dR - fpW / 2} y={deckY - FP_H / 2 + 1} fontSize={10} fill={CLR.fpTxt} textAnchor="middle" dominantBaseline="central" fontFamily="system-ui,sans-serif" fontWeight={700}>
+          <rect x={dR - fpW} y={deckY - FP_H} width={fpW} height={FP_H} rx="2" fill="url(#fpGrad)" />
+          <text
+            x={dR - fpW / 2}
+            y={deckY - FP_H / 2 + 4}
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            fill={CLR.fpTxt}
+          >
             FP
           </text>
         </>
       )}
-
-      <rect x={dL} y={deckY} width={dR - dL} height={DECK_H} fill={CLR.deck} stroke={CLR.deckS} strokeWidth={0.5} />
-      <rect x={cwL} y={deckY} width={cwR - cwL} height={3} fill={CLR.deckTop} opacity={0.65} />
 
       {centers.map((cx, i) => (
         <IBeam key={i} cx={cx} flangeW={flangeW} deckBot={deckBot} />
@@ -337,39 +480,71 @@ function InteractiveSVG({
 
       {centers.length >= 2 && (
         <>
-          <DimLine x1={centers[0]} x2={centers[1]} y={gsY} label={`${gs.toFixed(1)} m`} color="#52779a" small />
+          {centers.slice(0, -1).map((c1, i) => {
+            const c2 = centers[i + 1];
+            return (
+              <g key={`br-${i}`}>
+                <line x1={c1} y1={deckBot + 14} x2={c2} y2={botBot - 3} stroke={CLR.dimGray} strokeWidth="2" />
+                <line x1={c1} y1={botBot - 3} x2={c2} y2={deckBot + 14} stroke={CLR.dimGray} strokeWidth="2" />
+              </g>
+            );
+          })}
+
           {centers.length > 2 && (
-            <line x1={centers[1]} y1={gsY} x2={centers[centers.length - 1]} y2={gsY} stroke="#6b8dad" strokeWidth={0.6} strokeDasharray="3 3" />
+            <line
+              x1={centers[0]}
+              y1={botBot - 3}
+              x2={centers[centers.length - 1]}
+              y2={botBot - 3}
+              stroke={CLR.dimGray}
+              strokeWidth="2.2"
+            />
           )}
-          <text x={VW / 2} y={gsY + 14} fontSize={10} fill={CLR.iText} textAnchor="middle" fontFamily="system-ui,sans-serif" fontWeight={600}>
-            {ng} girders @ {gs.toFixed(1)} m spacing
+
+          <text
+            x={(centers[0] + centers[centers.length - 1]) / 2}
+            y={lblY}
+            textAnchor="middle"
+            fontSize="12"
+            fontWeight="700"
+            fill={CLR.iLegend}
+          >
+            {`${ng} girders @ ${gs.toFixed(1)} m spacing`}
           </text>
         </>
       )}
 
-      {/* Material badges (new) */}
-      <MaterialBadge x={deckBadgeX} y={deckBadgeY} label={deck_concrete ? `Deck: ${deck_concrete}` : ""} />
-      <MaterialBadge x={girderBadgeX} y={girderBadgeY} label={girder_steel ? `Girder: ${girder_steel}` : ""} />
-      <MaterialBadge x={bracingBadgeX} y={bracingBadgeY} label={cross_bracing_steel ? `Bracing: ${cross_bracing_steel}` : ""} />
+      <MaterialBadge x={deckBadgeX} y={deckBadgeY} label={deck_concrete} />
+      <MaterialBadge x={girderBadgeX} y={girderBadgeY} label={girder_steel} />
+      <MaterialBadge x={bracingBadgeX} y={bracingBadgeY} label={cross_bracing_steel} />
 
-      <circle cx={ML} cy={lblY} r={3} fill="#1e8f5f" />
-      <text x={ML + 8} y={lblY + 1} fontSize={10} fill={CLR.iLegend} dominantBaseline="central" fontFamily="system-ui,sans-serif" fontWeight={700}>
-        overall
-      </text>
+      <DimLine x1={dL} x2={dR} y={14} label={`overall ${ow.toFixed(2)} m`} color={CLR.dimBlue} />
+      <DimLine x1={cwL} x2={cwR} y={30} label={`carriageway ${cw.toFixed(2)} m`} color={CLR.dimGreen} />
 
-      <circle cx={ML + 72} cy={lblY} r={3} fill="#2f76b8" />
-      <text x={ML + 80} y={lblY + 1} fontSize={10} fill={CLR.iLegend} dominantBaseline="central" fontFamily="system-ui,sans-serif" fontWeight={700}>
-        carriageway
-      </text>
-
-      <circle cx={ML + 178} cy={lblY} r={3} fill="#6f5ec7" />
-      <text x={ML + 186} y={lblY + 1} fontSize={10} fill={CLR.iLegend} dominantBaseline="central" fontFamily="system-ui,sans-serif" fontWeight={700}>
-        overhang
-      </text>
+      {dow > 0.05 && centers.length > 0 && (
+        <>
+          <DimLine x1={dL} x2={centers[0]} y={gsY} label={`overhang ${dow.toFixed(1)} m`} color={CLR.dimPurple} small />
+          <DimLine
+            x1={centers[centers.length - 1]}
+            x2={dR}
+            y={gsY}
+            label={`overhang ${dow.toFixed(1)} m`}
+            color={CLR.dimPurple}
+            small
+          />
+        </>
+      )}
 
       {parseFloat(span) > 0 && (
-        <text x={VW - MR} y={lblY + 1} fontSize={10} fill={CLR.iText} textAnchor="end" dominantBaseline="central" fontFamily="system-ui,sans-serif" fontWeight={600}>
-          span: {span} m
+        <text
+          x={VW - 14}
+          y={VH - 8}
+          textAnchor="end"
+          fontSize="11"
+          fontWeight="700"
+          fill={CLR.iDisclaimer}
+        >
+          {`span: ${span} m`}
         </text>
       )}
     </svg>
@@ -388,10 +563,21 @@ export default function BridgeDiagramPanel({
   deck_concrete = "",
 }) {
   const [view, setView] = useState("reference");
+
+  const bom = useMemo(
+    () =>
+      estimateBridgeBOM({
+        span,
+        carriageway_width,
+        number_of_girders,
+        deck_overhang_width,
+      }),
+    [span, carriageway_width, number_of_girders, deck_overhang_width]
+  );
+
   const hasValues = parseFloat(carriageway_width) > 0;
   const isInteractive = view === "interactive";
 
-  // icy blue theme for interactive only
   const panelBg = isInteractive ? "#dff1ff" : "#1a1a2e";
   const headerBg = isInteractive ? "#b9dcf7" : "#0f3460";
   const headerBorder = isInteractive ? "#8cbfe6" : "#1a4080";
@@ -421,35 +607,51 @@ export default function BridgeDiagramPanel({
   return (
     <div
       style={{
+        background: panelBg,
+        borderLeft: `1px solid ${isInteractive ? "#a6cde8" : "#203a62"}`,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
-        height: "100%",
-        width: "100%",
-        minWidth: 0,
-        flex: 1,
-        background: panelBg,
+        minHeight: 0,
       }}
     >
       <div
         style={{
+          padding: "12px 14px",
+          background: headerBg,
+          borderBottom: `1px solid ${headerBorder}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "6px 12px",
-          background: headerBg,
-          borderBottom: `1px solid ${headerBorder}`,
-          flexShrink: 0,
+          gap: 10,
+          flexWrap: "wrap",
         }}
       >
-        <span style={{ fontSize: 11, fontWeight: 700, color: titleColor, letterSpacing: "1px", textTransform: "uppercase" }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 800,
+            letterSpacing: "1px",
+            textTransform: "uppercase",
+            color: titleColor,
+          }}
+        >
           Bridge Cross Section (For Nomenclature Only)
-        </span>
+        </div>
 
-        <div style={{ display: "flex", gap: 4 }}>
-          <button type="button" style={view === "reference" ? btnActive : btnBase} onClick={() => setView("reference")}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => setView("reference")}
+            style={view === "reference" ? btnActive : btnBase}
+          >
             Reference
           </button>
-          <button type="button" style={view === "interactive" ? btnActive : btnBase} onClick={() => setView("interactive")}>
+          <button
+            type="button"
+            onClick={() => setView("interactive")}
+            style={view === "interactive" ? btnActive : btnBase}
+          >
             Interactive (Beta)
           </button>
         </div>
@@ -458,15 +660,10 @@ export default function BridgeDiagramPanel({
       <div
         style={{
           flex: 1,
-          width: "100%",
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "stretch",
-          justifyContent: "center",
-          padding: "10px",
+          minHeight: 0,
           overflow: "auto",
-          boxSizing: "border-box",
+          padding: 14,
+          background: contentBg,
         }}
       >
         {view === "reference" ? (
@@ -474,11 +671,22 @@ export default function BridgeDiagramPanel({
             <img
               src={bridgeImage}
               alt="Bridge cross-section reference diagram"
-              style={{ width: "100%", height: "auto", display: "block", borderRadius: 3 }}
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                borderRadius: 3,
+              }}
               draggable={false}
             />
 
-            <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+              }}
+            >
               <ReferenceOverlay
                 carriageway_width={carriageway_width}
                 number_of_girders={number_of_girders}
@@ -501,7 +709,6 @@ export default function BridgeDiagramPanel({
                   fontSize: 10,
                   padding: "3px 12px",
                   whiteSpace: "nowrap",
-                  pointerEvents: "none",
                 }}
               >
                 Fill in the form to see live dimension annotations
@@ -509,16 +716,7 @@ export default function BridgeDiagramPanel({
             )}
           </div>
         ) : (
-          <div
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              background: contentBg,
-              border: "1px solid #8fa7d6",
-              borderRadius: 6,
-              padding: 10,
-            }}
-          >
+          <div>
             <InteractiveSVG
               carriageway_width={carriageway_width}
               number_of_girders={number_of_girders}
@@ -530,21 +728,199 @@ export default function BridgeDiagramPanel({
               cross_bracing_steel={cross_bracing_steel}
               deck_concrete={deck_concrete}
             />
+
             <div
               style={{
-                textAlign: "center",
-                fontSize: 12,
-                color: CLR.iDisclaimer,
                 marginTop: 8,
-                borderTop: "1px solid rgba(20,58,92,0.25)",
-                paddingTop: 7,
-                fontWeight: 600,
+                textAlign: "center",
+                color: "#1d466d",
+                fontSize: 11,
+                fontWeight: 700,
               }}
             >
               Schematic — proportions are approximate
             </div>
           </div>
         )}
+
+        <div
+          style={{
+            marginTop: 14,
+            padding: 12,
+            border: "1px solid #2a4a8a",
+            borderRadius: 8,
+            background: isInteractive ? "#d7efff" : "#0f1f44",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: isInteractive ? "#1d4f7a" : "#eaf1ff",
+              }}
+            >
+            Estimated Bill of Materials
+            </div>
+
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: "4px 8px",
+                borderRadius: 999,
+                background: isInteractive ? "#b8e6c2" : "#234d2f",
+                color: isInteractive ? "#1f6a34" : "#7dff9a",
+              }}
+            >
+              Approx.
+            </div>
+          </div>
+
+          {!bom.clearValues ? (
+            <div
+              style={{
+                color: isInteractive ? "#355d7a" : "#b9c8e6",
+                fontSize: 13,
+                lineHeight: 1.4,
+              }}
+            >
+              Enter span, carriageway width, girder count, and overhang to view estimates.
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  padding: 10,
+                  border: "1px solid #2a4a8a",
+                  borderRadius: 6,
+                  background: isInteractive ? "#edf8ff" : "#102247",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isInteractive ? "#587694" : "#9db0d8",
+                    marginBottom: 4,
+                  }}
+                >
+                  Total Concrete Volume
+                </div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: isInteractive ? "#1f8a4c" : "#6dff97",
+                  }}
+                >
+                  {bom.concreteVolume.toFixed(2)} m³
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: 10,
+                  border: "1px solid #2a4a8a",
+                  borderRadius: 6,
+                  background: isInteractive ? "#edf8ff" : "#102247",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isInteractive ? "#587694" : "#9db0d8",
+                    marginBottom: 4,
+                  }}
+                >
+                  Estimated Steel Weight
+                </div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: isInteractive ? "#1f8a4c" : "#6dff97",
+                  }}
+                >
+                  {bom.steelWeightTon.toFixed(2)} t
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: 10,
+                  border: "1px solid #2a4a8a",
+                  borderRadius: 6,
+                  background: isInteractive ? "#edf8ff" : "#102247",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isInteractive ? "#587694" : "#9db0d8",
+                    marginBottom: 4,
+                  }}
+                >
+                  Deck Area
+                </div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: isInteractive ? "#1f8a4c" : "#6dff97",
+                  }}
+                >
+                  {bom.deckArea.toFixed(2)} m²
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: 10,
+                  border: "1px solid #2a4a8a",
+                  borderRadius: 6,
+                  background: isInteractive ? "#edf8ff" : "#102247",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isInteractive ? "#587694" : "#9db0d8",
+                    marginBottom: 4,
+                  }}
+                >
+                  Main Girder Length
+                </div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: isInteractive ? "#1f8a4c" : "#6dff97",
+                  }}
+                >
+                  {bom.estimatedMainGirderLength.toFixed(2)} m
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

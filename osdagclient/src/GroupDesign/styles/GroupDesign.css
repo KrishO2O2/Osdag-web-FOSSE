@@ -396,3 +396,71 @@
       grid-template-columns: 1fr;
     }
   }
+
+  .gd-bom-card {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid #2a4a8a;
+    border-radius: 8px;
+    background: #0f1f44;
+  }
+  
+  .gd-bom-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .gd-bom-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #eaf1ff;
+  }
+  
+  .gd-bom-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #234d2f;
+    color: #7dff9a;
+  }
+  
+  .gd-bom-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  
+  .gd-bom-item {
+    padding: 10px;
+    border: 1px solid #2a4a8a;
+    border-radius: 6px;
+    background: #102247;
+  }
+  
+  .gd-bom-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9db0d8;
+    margin-bottom: 4px;
+  }
+  
+  .gd-bom-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #6dff97;
+  }
+  
+  .gd-bom-empty {
+    color: #b9c8e6;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  @media (max-width: 640px) {
+    .gd-bom-grid {
+      grid-template-columns: 1fr;
+    }
+  }
