@@ -10,6 +10,7 @@
     font-family: "Segoe UI", Arial, sans-serif;
     font-size: 13px;
     color: #e0e0e0;
+    min-height: 0; /* ADD */
   }
   
   /* Wider left panel */
@@ -19,12 +20,16 @@
     max-width: 520px;
     background: #16213e;
     border-right: 1px solid #0f3460;
-    overflow-y: auto;
+    overflow-y: auto;   /* keep */
+    overflow-x: hidden; /* ADD */
     padding: 14px;
+    min-height: 0;      /* ADD */
   }
   
   .gd-tab-content {
+    height: max-content;
     padding: 0;
+    min-height: 0;      /* ADD */
   }
   
   /* Section blocks */
@@ -165,7 +170,8 @@
     flex-direction: column;
     background: #1a1a2e;
     padding: 12px;
-    overflow: auto;
+    overflow: hidden; /* CHANGE from auto -> hidden */
+    min-height: 0;    /* ADD */
   }
   
   .gd-right-panel-label {
@@ -203,6 +209,7 @@
     .gd-root {
       flex-direction: column;
       height: auto;
+      overflow: visible; /* ADD */
     }
   
     .gd-left-panel {
@@ -211,9 +218,11 @@
       max-width: 100%;
       border-right: none;
       border-bottom: 1px solid #0f3460;
+      overflow: visible; /* ADD */
     }
   
     .gd-right-panel {
       min-height: 420px;
+      overflow: visible; /* ADD */
     }
   }

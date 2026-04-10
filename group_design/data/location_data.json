@@ -1,57 +1,39 @@
 [
     {
-      "state": "Maharashtra",
-      "district": "Mumbai",
-      "wind_speed": 44,
-      "seismic_zone": "III",
-      "zone_factor": 0.16,
-      "shade_air_temp_max": 40,
-      "shade_air_temp_min": 12
-    },
-    {
-      "state": "Maharashtra",
-      "district": "Pune",
-      "wind_speed": 39,
-      "seismic_zone": "III",
-      "zone_factor": 0.16,
+      "state": "Andhra Pradesh",
+      "district": "Visakhapatnam",
+      "wind_speed": 50,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
       "shade_air_temp_max": 38,
-      "shade_air_temp_min": 10
+      "shade_air_temp_min": 15
     },
     {
-      "state": "Karnataka",
-      "district": "Bengaluru Urban",
-      "wind_speed": 33,
-      "seismic_zone": "II",
-      "zone_factor": 0.10,
-      "shade_air_temp_max": 34,
-      "shade_air_temp_min": 14
-    },
-    {
-      "state": "Karnataka",
-      "district": "Mysuru",
-      "wind_speed": 33,
-      "seismic_zone": "II",
-      "zone_factor": 0.10,
-      "shade_air_temp_max": 35,
-      "shade_air_temp_min": 13
-    },
-    {
-      "state": "Tamil Nadu",
-      "district": "Chennai",
+      "state": "Andhra Pradesh",
+      "district": "Vijayawada",
       "wind_speed": 50,
       "seismic_zone": "III",
       "zone_factor": 0.16,
-      "shade_air_temp_max": 39,
-      "shade_air_temp_min": 20
+      "shade_air_temp_max": 42,
+      "shade_air_temp_min": 17
     },
     {
-      "state": "Tamil Nadu",
-      "district": "Coimbatore",
-      "wind_speed": 39,
+      "state": "Bihar",
+      "district": "Patna",
+      "wind_speed": 47,
+      "seismic_zone": "IV",
+      "zone_factor": 0.24,
+      "shade_air_temp_max": 43,
+      "shade_air_temp_min": 6
+    },
+    {
+      "state": "Bihar",
+      "district": "Gaya",
+      "wind_speed": 47,
       "seismic_zone": "III",
       "zone_factor": 0.16,
-      "shade_air_temp_max": 37,
-      "shade_air_temp_min": 18
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 4
     },
     {
       "state": "Delhi",
@@ -60,7 +42,7 @@
       "seismic_zone": "IV",
       "zone_factor": 0.24,
       "shade_air_temp_max": 45,
-      "shade_air_temp_min": 6
+      "shade_air_temp_min": 5
     },
     {
       "state": "Delhi",
@@ -69,6 +51,222 @@
       "seismic_zone": "IV",
       "zone_factor": 0.24,
       "shade_air_temp_max": 44,
-      "shade_air_temp_min": 7
+      "shade_air_temp_min": 6
+    },
+    {
+      "state": "Gujarat",
+      "district": "Ahmedabad",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 44,
+      "shade_air_temp_min": 10
+    },
+    {
+      "state": "Gujarat",
+      "district": "Surat",
+      "wind_speed": 44,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 40,
+      "shade_air_temp_min": 12
+    },
+    {
+      "state": "Gujarat",
+      "district": "Bhuj",
+      "wind_speed": 50,
+      "seismic_zone": "V",
+      "zone_factor": 0.36,
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 8
+    },
+    {
+      "state": "Karnataka",
+      "district": "Bengaluru Urban",
+      "wind_speed": 33,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 35,
+      "shade_air_temp_min": 14
+    },
+    {
+      "state": "Karnataka",
+      "district": "Mysuru",
+      "wind_speed": 33,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 36,
+      "shade_air_temp_min": 13
+    },
+    {
+      "state": "Karnataka",
+      "district": "Mangaluru",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 36,
+      "shade_air_temp_min": 20
+    },
+    {
+      "state": "Kerala",
+      "district": "Thiruvananthapuram",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 35,
+      "shade_air_temp_min": 21
+    },
+    {
+      "state": "Kerala",
+      "district": "Kochi",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 35,
+      "shade_air_temp_min": 22
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Bhopal",
+      "wind_speed": 39,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 42,
+      "shade_air_temp_min": 8
+    },
+    {
+      "state": "Madhya Pradesh",
+      "district": "Indore",
+      "wind_speed": 39,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 41,
+      "shade_air_temp_min": 9
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Mumbai",
+      "wind_speed": 44,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 38,
+      "shade_air_temp_min": 14
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 39,
+      "shade_air_temp_min": 8
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Nagpur",
+      "wind_speed": 44,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 10
+    },
+    {
+      "state": "Punjab",
+      "district": "Amritsar",
+      "wind_speed": 47,
+      "seismic_zone": "IV",
+      "zone_factor": 0.24,
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 2
+    },
+    {
+      "state": "Punjab",
+      "district": "Ludhiana",
+      "wind_speed": 47,
+      "seismic_zone": "IV",
+      "zone_factor": 0.24,
+      "shade_air_temp_max": 44,
+      "shade_air_temp_min": 3
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Jaipur",
+      "wind_speed": 47,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 5
+    },
+    {
+      "state": "Rajasthan",
+      "district": "Jodhpur",
+      "wind_speed": 47,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 46,
+      "shade_air_temp_min": 6
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "wind_speed": 50,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 40,
+      "shade_air_temp_min": 20
+    },
+    {
+      "state": "Tamil Nadu",
+      "district": "Coimbatore",
+      "wind_speed": 39,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 38,
+      "shade_air_temp_min": 16
+    },
+    {
+      "state": "Telangana",
+      "district": "Hyderabad",
+      "wind_speed": 44,
+      "seismic_zone": "II",
+      "zone_factor": 0.10,
+      "shade_air_temp_max": 42,
+      "shade_air_temp_min": 12
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Lucknow",
+      "wind_speed": 47,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 44,
+      "shade_air_temp_min": 6
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Kanpur",
+      "wind_speed": 47,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 45,
+      "shade_air_temp_min": 5
+    },
+    {
+      "state": "West Bengal",
+      "district": "Kolkata",
+      "wind_speed": 50,
+      "seismic_zone": "III",
+      "zone_factor": 0.16,
+      "shade_air_temp_max": 40,
+      "shade_air_temp_min": 11
+    },
+    {
+      "state": "West Bengal",
+      "district": "Darjeeling",
+      "wind_speed": 47,
+      "seismic_zone": "IV",
+      "zone_factor": 0.24,
+      "shade_air_temp_max": 25,
+      "shade_air_temp_min": 0
     }
   ]

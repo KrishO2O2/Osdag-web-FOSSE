@@ -210,3 +210,4 @@ class GroupDesignSubmitView(APIView):
             "submitted_data": data,
             "irc_values": irc_values,
         }, status=status.HTTP_200_OK)
+    

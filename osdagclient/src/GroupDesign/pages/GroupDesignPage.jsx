@@ -1,26 +1,26 @@
 import React from "react";
 import InputPanel from "../components/InputPanel";
+import BridgeDiagramPanel from "../components/BridgeDiagramPanel";
+import useGroupDesign from "../hooks/useGroupDesign";
 import "../styles/GroupDesign.css";
-import bridgeImage from "../assets/bridge_cross_section.jpg"; // change extension if yours is .png
 
 export default function GroupDesignPage() {
+  const gd = useGroupDesign();
+
   return (
     <div className="gd-root">
-      {/* Left panel */}
+      {/* Left panel (scroll container) */}
       <div className="gd-left-panel">
-        <InputPanel />
+        <InputPanel gd={gd} />
       </div>
 
-      {/* Right panel with static reference image */}
-      <div className="gd-right-panel">
-        <div className="gd-right-panel-label">
-          Bridge Cross Section (For Nomenclature only)
-        </div>
-        <img
-          src={bridgeImage}
-          alt="Bridge Cross Section"
-          className="gd-bridge-image"
-          draggable="false"
+      {/* Right panel */}
+      <div className="gd-right-panel" style={{ padding: 0 }}>
+        <BridgeDiagramPanel
+          carriageway_width={gd.form.carriageway_width}
+          number_of_girders={gd.form.number_of_girders}
+          girder_spacing={gd.form.girder_spacing}
+          deck_overhang_width={gd.form.deck_overhang_width}
         />
       </div>
     </div>

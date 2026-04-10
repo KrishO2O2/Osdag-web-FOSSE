@@ -12,20 +12,14 @@ import {
 const initialForm = {
   structure_type: "highway",
   mode: "location_lookup",
-
-  // NEW extra-credit fields
   state: "",
   district: "",
-
-  // keep old city for compatibility with submit serializer (mapped from district)
   city: "",
-
   wind_speed: "",
   seismic_zone: "",
   zone_factor: "",
   shade_air_temp_max: "",
   shade_air_temp_min: "",
-
   span: "",
   carriageway_width: "",
   footpath: "none",
@@ -33,18 +27,16 @@ const initialForm = {
   girder_spacing: "",
   number_of_girders: "",
   deck_overhang_width: "",
-
   girder_steel: "",
   cross_bracing_steel: "",
   deck_concrete: "",
 };
 
-const toFloatOrNull = (v) => (v === "" ? null : parseFloat(v));
-const toIntOrNull = (v) => (v === "" ? null : parseInt(v, 10));
+const toFloatOrNull = (v) => (v === "" || v == null ? null : parseFloat(v));
+const toIntOrNull = (v) => (v === "" || v == null ? null : parseInt(v, 10));
 
 export default function useGroupDesign() {
   const [form, setForm] = useState(initialForm);
-
   const [masterData, setMasterData] = useState({
     structure_types: [],
     footpath_options: [],
@@ -54,26 +46,21 @@ export default function useGroupDesign() {
     location_modes: [],
   });
 
-  // NEW datasets
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
-
   const [loadingMaster, setLoadingMaster] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [checkingGeometry, setCheckingGeometry] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
   const [submitErrors, setSubmitErrors] = useState({});
   const [geometryErrors, setGeometryErrors] = useState({});
   const [globalErrors, setGlobalErrors] = useState([]);
-
   const [geometryResult, setGeometryResult] = useState(null);
   const [submitResult, setSubmitResult] = useState(null);
 
   const isLookupMode = form.mode === "location_lookup";
   const isCustomMode = form.mode === "custom_loading";
 
-  // load static master + states
   useEffect(() => {
     let active = true;
     (async () => {
@@ -90,15 +77,12 @@ export default function useGroupDesign() {
         if (active) setLoadingMaster(false);
       }
     })();
-
     return () => {
       active = false;
     };
   }, []);
 
-  const setField = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  const setField = (name, value) => setForm((p) => ({ ...p, [name]: value }));
 
   const setMode = (mode) => {
     setSubmitErrors({});
@@ -119,15 +103,12 @@ export default function useGroupDesign() {
           shade_air_temp_min: "",
         };
       }
-      // custom mode: clear lookup selectors
       return { ...prev, mode, state: "", district: "", city: "" };
     });
     setDistricts([]);
   };
 
-  // NEW: on state change, fetch districts
   const onStateChange = async (stateVal) => {
-    setField("state", stateVal);
     setForm((prev) => ({
       ...prev,
       state: stateVal,
@@ -140,8 +121,8 @@ export default function useGroupDesign() {
       shade_air_temp_min: "",
     }));
     setDistricts([]);
-
     if (!stateVal) return;
+
     try {
       setLoadingLocation(true);
       const ds = await fetchDistrictsByState(stateVal);
@@ -154,15 +135,10 @@ export default function useGroupDesign() {
     }
   };
 
-  // NEW: on district change, auto-fill values
   const onDistrictChange = async (districtVal) => {
-    setForm((prev) => ({
-      ...prev,
-      district: districtVal,
-      city: districtVal, // compatibility for current submit serializer
-    }));
-
+    setForm((prev) => ({ ...prev, district: districtVal, city: districtVal }));
     if (!form.state || !districtVal) return;
+
     try {
       setLoadingLocation(true);
       const data = await fetchLocationByStateDistrict(form.state, districtVal);
@@ -205,8 +181,7 @@ export default function useGroupDesign() {
         ...prev,
         girder_spacing: data.girder_spacing !== undefined ? String(data.girder_spacing) : prev.girder_spacing,
         number_of_girders: data.number_of_girders !== undefined ? String(data.number_of_girders) : prev.number_of_girders,
-        deck_overhang_width:
-          data.deck_overhang_width !== undefined ? String(data.deck_overhang_width) : prev.deck_overhang_width,
+        deck_overhang_width: data.deck_overhang_width !== undefined ? String(data.deck_overhang_width) : prev.deck_overhang_width,
       }));
     } catch (e) {
       const err = normalizeApiError(e);
@@ -217,50 +192,41 @@ export default function useGroupDesign() {
     }
   };
 
-  const buildSubmitPayload = () => {
-    const project_location =
+  const buildSubmitPayload = () => ({
+    structure_type: form.structure_type,
+    project_location:
       form.mode === "location_lookup"
-        ? {
-            mode: "location_lookup",
-            // serializer currently expects city; map district to city
-            city: form.city || form.district,
-          }
+        ? { mode: "location_lookup", city: form.city || form.district }
         : {
             mode: "custom_loading",
             wind_speed: toFloatOrNull(form.wind_speed),
-            seismic_zone: form.seismic_zone,
+            seismic_zone: form.seismic_zone || null,
             zone_factor: toFloatOrNull(form.zone_factor),
             shade_air_temp_max: toFloatOrNull(form.shade_air_temp_max),
             shade_air_temp_min: toFloatOrNull(form.shade_air_temp_min),
-          };
-
-    return {
-      structure_type: form.structure_type,
-      project_location,
-      geometric_inputs: {
-        span: toFloatOrNull(form.span),
-        carriageway_width: toFloatOrNull(form.carriageway_width),
-        footpath: form.footpath,
-        skew_angle: toFloatOrNull(form.skew_angle),
-        girder_spacing: toFloatOrNull(form.girder_spacing),
-        number_of_girders: toIntOrNull(form.number_of_girders),
-        deck_overhang_width: toFloatOrNull(form.deck_overhang_width),
-      },
-      material_inputs: {
-        girder_steel: form.girder_steel,
-        cross_bracing_steel: form.cross_bracing_steel,
-        deck_concrete: form.deck_concrete,
-      },
-    };
-  };
+          },
+    geometric_inputs: {
+      span: toFloatOrNull(form.span),
+      carriageway_width: toFloatOrNull(form.carriageway_width),
+      footpath: form.footpath,
+      skew_angle: toFloatOrNull(form.skew_angle),
+      girder_spacing: toFloatOrNull(form.girder_spacing),
+      number_of_girders: toIntOrNull(form.number_of_girders),
+      deck_overhang_width: toFloatOrNull(form.deck_overhang_width),
+    },
+    material_inputs: {
+      girder_steel: form.girder_steel || null,
+      cross_bracing_steel: form.cross_bracing_steel || null,
+      deck_concrete: form.deck_concrete || null,
+    },
+  });
 
   const submit = async () => {
     try {
       setSubmitting(true);
       setSubmitErrors({});
       setGlobalErrors([]);
-      const payload = buildSubmitPayload();
-      const data = await submitGroupDesignApi(payload);
+      const data = await submitGroupDesignApi(buildSubmitPayload());
       setSubmitResult(data);
       return { ok: true, data };
     } catch (e) {

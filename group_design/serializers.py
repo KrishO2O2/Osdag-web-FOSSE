@@ -1,183 +1,164 @@
 # ============================================================
-# serializers.py — Group Design App
-# All validation mirrors the frontend validators.js exactly.
-# Exact error messages match the FOSSEE spec.
+# serializers.py — Group Design validation
+# Keeps frontend/backend validation messages consistent
 # ============================================================
 
 from rest_framework import serializers
 
 
-# ── Constants ──────────────────────────────────────────────
-SPAN_MIN, SPAN_MAX               = 20, 45
-CARRIAGEWAY_MIN, CARRIAGEWAY_MAX = 4.25, 24
-SKEW_MIN, SKEW_MAX               = -15, 15
-STEEL_GRADES                     = ["E250", "E350", "E450"]
-CONCRETE_GRADES                  = [f"M{g}" for g in range(25, 65, 5)]  # M25..M60
-FOOTPATH_CHOICES                 = ["none", "single", "both"]
-LOCATION_MODES                   = ["location_lookup", "custom_loading"]
-
-
-# ── 1. Master Data ─────────────────────────────────────────
-# (No serializer needed — view returns static data directly)
-
-
-# ── 2. Location Lookup ─────────────────────────────────────
+# ------------------------------------------------------------
+# 1) Location lookup query serializer (existing endpoint)
+# GET /api/group-design/location/?city=Mumbai
+# ------------------------------------------------------------
 class LocationLookupSerializer(serializers.Serializer):
-    city = serializers.CharField(max_length=100)
+    city = serializers.CharField(required=True, allow_blank=False)
 
 
-# ── 3. Additional Geometry ─────────────────────────────────
+# ------------------------------------------------------------
+# 2) Additional Geometry check serializer
+# POST /api/group-design/check-geometry/
+# ------------------------------------------------------------
 class AdditionalGeometrySerializer(serializers.Serializer):
-    girder_spacing     = serializers.FloatField(min_value=0.01)
-    number_of_girders  = serializers.IntegerField(min_value=2)
-    deck_overhang_width = serializers.FloatField(min_value=0)
-    carriageway_width  = serializers.FloatField()   # needed for OW calculation
+    carriageway_width = serializers.FloatField(required=True, min_value=0.1)
+    girder_spacing = serializers.FloatField(required=True, min_value=0.1)
+    number_of_girders = serializers.IntegerField(required=True, min_value=2)  # FIXED: consistent >= 2
+    deck_overhang_width = serializers.FloatField(required=True, min_value=0.0)
 
-    def validate(self, data):
-        cw  = data["carriageway_width"]
-        gs  = round(data["girder_spacing"], 1)
-        ng  = data["number_of_girders"]
-        dow = round(data["deck_overhang_width"], 1)
-        ow  = cw + 5  # Overall Bridge Width
+    def validate(self, attrs):
+        cw = attrs.get("carriageway_width")
+        gs = attrs.get("girder_spacing")
+        ng = attrs.get("number_of_girders")
+        dow = attrs.get("deck_overhang_width")
 
-        errors = {}
+        # same logic as your view uses
+        overall_width = cw + 5.0
 
-        if gs >= ow:
-            errors["girder_spacing"] = (
-                f"Spacing must be < overall width ({ow:.1f} m)."
-            )
-        if dow >= ow:
-            errors["deck_overhang_width"] = (
-                f"Overhang must be < overall width ({ow:.1f} m)."
-            )
+        # effective width left for girder spacing after both overhangs
+        effective_width = overall_width - (2 * dow)
 
-        if not errors:
-            expected = (ow - dow) / gs
-            if abs(expected - ng) > 0.5:
-                errors["non_field_errors"] = (
-                    f"Values inconsistent. With overall width {ow:.1f} m, "
-                    f"overhang {dow:.1f} m, spacing {gs:.1f} m — "
-                    f"girders should be {round(expected)}."
-                )
+        if effective_width <= 0:
+            raise serializers.ValidationError({
+                "deck_overhang_width": [
+                    f"Deck overhang too large for overall width {overall_width:.1f} m."
+                ]
+            })
 
-        if errors:
-            raise serializers.ValidationError(errors)
+        # expected count from spacing
+        # intervals = effective_width / spacing
+        # girders = intervals + 1 (rounded to nearest practical integer for this validation)
+        expected_girders = int(round((effective_width / gs) + 1))
 
-        # Return rounded values
-        data["girder_spacing"]      = gs
-        data["deck_overhang_width"] = dow
-        return data
+        if expected_girders < 2:
+            expected_girders = 2
+
+        if ng != expected_girders:
+            raise serializers.ValidationError({
+                "non_field_errors": [
+                    (
+                        f"Values inconsistent. With overall width {overall_width:.1f} m, "
+                        f"overhang {dow:.1f} m, spacing {gs:.1f} m — girders should be {expected_girders}."
+                    )
+                ]
+            })
+
+        return attrs
 
 
-# ── 4. Project Location (nested inside main form) ──────────
+# ------------------------------------------------------------
+# 3) Nested serializers for full submit
+# POST /api/group-design/submit/
+# ------------------------------------------------------------
 class ProjectLocationSerializer(serializers.Serializer):
-    mode = serializers.ChoiceField(choices=LOCATION_MODES)
+    mode = serializers.ChoiceField(choices=["location_lookup", "custom_loading"])
 
-    # Mode 1 fields
-    city  = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    # lookup mode (current backend expects city field)
+    city = serializers.CharField(required=False, allow_blank=True)
 
-    # Mode 2 fields (custom loading)
-    wind_speed         = serializers.FloatField(required=False, min_value=0)
-    seismic_zone       = serializers.CharField(max_length=5, required=False)
-    zone_factor        = serializers.FloatField(required=False, min_value=0)
-    shade_air_temp_max = serializers.FloatField(required=False)
-    shade_air_temp_min = serializers.FloatField(required=False)
+    # custom mode fields
+    wind_speed = serializers.FloatField(required=False, allow_null=True)
+    seismic_zone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    zone_factor = serializers.FloatField(required=False, allow_null=True)
+    shade_air_temp_max = serializers.FloatField(required=False, allow_null=True)
+    shade_air_temp_min = serializers.FloatField(required=False, allow_null=True)
 
-    def validate(self, data):
-        mode = data["mode"]
+    def validate(self, attrs):
+        mode = attrs.get("mode")
 
         if mode == "location_lookup":
-            if not data.get("city"):
-                raise serializers.ValidationError(
-                    {"city": "City is required for location lookup mode."}
-                )
+            city = attrs.get("city")
+            if not city:
+                raise serializers.ValidationError({"city": ["This field is required."]})
 
         elif mode == "custom_loading":
-            required = ["wind_speed", "seismic_zone", "zone_factor",
-                        "shade_air_temp_max", "shade_air_temp_min"]
-            missing = [f for f in required if data.get(f) is None]
-            if missing:
-                raise serializers.ValidationError(
-                    {f: "Required for custom loading mode." for f in missing}
-                )
-            if (data.get("shade_air_temp_min") is not None and
-                    data.get("shade_air_temp_max") is not None and
-                    data["shade_air_temp_min"] >= data["shade_air_temp_max"]):
-                raise serializers.ValidationError(
-                    {"shade_air_temp_min": "Min temperature must be less than Max."}
-                )
+            required_custom = [
+                "wind_speed",
+                "seismic_zone",
+                "zone_factor",
+                "shade_air_temp_max",
+                "shade_air_temp_min",
+            ]
+            errors = {}
+            for f in required_custom:
+                v = attrs.get(f, None)
+                if v is None or (isinstance(v, str) and v.strip() == ""):
+                    errors[f] = ["This field is required."]
+            if errors:
+                raise serializers.ValidationError(errors)
 
-        return data
+        return attrs
 
 
-# ── 5. Full Form Submission ─────────────────────────────────
 class GeometricInputsSerializer(serializers.Serializer):
-    span               = serializers.FloatField()
-    carriageway_width  = serializers.FloatField()
-    footpath           = serializers.ChoiceField(choices=FOOTPATH_CHOICES)
-    skew_angle         = serializers.FloatField()
-    girder_spacing     = serializers.FloatField(min_value=0.01)
-    number_of_girders  = serializers.IntegerField(min_value=2)
-    deck_overhang_width = serializers.FloatField(min_value=0)
+    span = serializers.FloatField(required=True, min_value=0.1)
+    carriageway_width = serializers.FloatField(required=True, min_value=0.1)
+    footpath = serializers.ChoiceField(choices=["none", "single", "both"])
+    skew_angle = serializers.FloatField(required=True, min_value=0.0, max_value=90.0)
 
-    def validate_span(self, value):
-        if value < SPAN_MIN or value > SPAN_MAX:
-            raise serializers.ValidationError("Outside the software range.")
-        return value
+    girder_spacing = serializers.FloatField(required=True, min_value=0.1)
+    number_of_girders = serializers.IntegerField(required=True, min_value=2)  # FIXED: consistent >= 2
+    deck_overhang_width = serializers.FloatField(required=True, min_value=0.0)
 
-    def validate_carriageway_width(self, value):
-        if value < CARRIAGEWAY_MIN or value >= CARRIAGEWAY_MAX:
-            raise serializers.ValidationError(
-                f"Must be \u2265 {CARRIAGEWAY_MIN} m and < {CARRIAGEWAY_MAX} m."
-            )
-        return value
+    def validate(self, attrs):
+        cw = attrs.get("carriageway_width")
+        gs = attrs.get("girder_spacing")
+        ng = attrs.get("number_of_girders")
+        dow = attrs.get("deck_overhang_width")
 
-    def validate_skew_angle(self, value):
-        if value < SKEW_MIN or value > SKEW_MAX:
-            raise serializers.ValidationError(
-                "IRC 24 (2010) requires detailed analysis."
-            )
-        return value
+        overall_width = cw + 5.0
+        effective_width = overall_width - (2 * dow)
 
-    def validate(self, data):
-        cw  = data.get("carriageway_width", 0)
-        gs  = round(data.get("girder_spacing", 0), 1)
-        ng  = data.get("number_of_girders", 0)
-        dow = round(data.get("deck_overhang_width", 0), 1)
-        ow  = cw + 5
+        if effective_width <= 0:
+            raise serializers.ValidationError({
+                "deck_overhang_width": [
+                    f"Deck overhang too large for overall width {overall_width:.1f} m."
+                ]
+            })
 
-        errors = {}
-        if gs >= ow:
-            errors["girder_spacing"] = f"Spacing must be < overall width ({ow:.1f} m)."
-        if dow >= ow:
-            errors["deck_overhang_width"] = f"Overhang must be < overall width ({ow:.1f} m)."
-        if not errors:
-            expected = (ow - dow) / gs if gs > 0 else 0
-            if abs(expected - ng) > 0.5:
-                errors["number_of_girders"] = (
-                    f"Inconsistent. Expected ~{round(expected)} girders."
-                )
-        if errors:
-            raise serializers.ValidationError(errors)
+        expected_girders = int(round((effective_width / gs) + 1))
+        if expected_girders < 2:
+            expected_girders = 2
 
-        data["girder_spacing"]      = gs
-        data["deck_overhang_width"] = dow
-        return data
+        if ng != expected_girders:
+            raise serializers.ValidationError({
+                "non_field_errors": [
+                    (
+                        f"Values inconsistent. With overall width {overall_width:.1f} m, "
+                        f"overhang {dow:.1f} m, spacing {gs:.1f} m — girders should be {expected_girders}."
+                    )
+                ]
+            })
+
+        return attrs
 
 
 class MaterialInputsSerializer(serializers.Serializer):
-    girder_steel        = serializers.ChoiceField(choices=STEEL_GRADES)
-    cross_bracing_steel = serializers.ChoiceField(choices=STEEL_GRADES)
-    deck_concrete       = serializers.ChoiceField(choices=CONCRETE_GRADES)
+    girder_steel = serializers.ChoiceField(choices=["E250", "E350", "E450"])
+    cross_bracing_steel = serializers.ChoiceField(choices=["E250", "E350", "E450"])
+    deck_concrete = serializers.ChoiceField(choices=[f"M{g}" for g in range(25, 65, 5)])
 
 
 class GroupDesignSubmitSerializer(serializers.Serializer):
-    structure_type   = serializers.ChoiceField(choices=["highway", "other"])
+    structure_type = serializers.ChoiceField(choices=["highway", "other"])
     project_location = ProjectLocationSerializer()
     geometric_inputs = GeometricInputsSerializer()
-    material_inputs  = MaterialInputsSerializer()
-
-    def validate_structure_type(self, value):
-        if value == "other":
-            raise serializers.ValidationError("Other structures not included.")
-        return value
+    material_inputs = MaterialInputsSerializer()
