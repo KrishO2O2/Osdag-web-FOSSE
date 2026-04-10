@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useReportDownload } from "../hooks/useReportDownload";
+import { useURLState } from "../hooks/useURLState";
 import Accordion from "./Accordion";
 import {
   isLocationComplete,
@@ -138,6 +139,13 @@ export default function InputPanel({ gd }) {
     resetForm,
     loadSampleData,
   } = gd;
+
+  const {
+    loadedFromURL,
+    copied,
+    handleCopyShareURL,
+    handleClearURLState,
+  } = useURLState(setField, setMode);
 
   const canDownloadReport = submitResult?.success === true || geometryResult != null;
 
@@ -318,6 +326,50 @@ export default function InputPanel({ gd }) {
             {friendly(g)}
           </div>
         ))}
+
+        {loadedFromURL && (
+          <div
+            style={{
+              background: "#0a2a1a",
+              border: "1px solid #4caf50",
+              borderRadius: 4,
+              color: "#6dff97",
+              fontSize: 11,
+              padding: "6px 10px",
+              marginBottom: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="6" stroke="#4caf50" strokeWidth="1.2" />
+              <polyline
+                points="4,7 6,9.5 10,4.5"
+                stroke="#4caf50"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Form loaded from shared link.
+            <button
+              type="button"
+              onClick={handleClearURLState}
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                color: "#4caf50",
+                cursor: "pointer",
+                fontSize: 11,
+                padding: 0,
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         <div className="gd-tabs">
           <button
@@ -620,15 +672,35 @@ export default function InputPanel({ gd }) {
                   <button type="button" className="gd-btn gd-btn-yellow" onClick={loadSampleData}>
                     Load Sample Example
                   </button>
+
                   <button
                     type="button"
                     className="gd-btn gd-btn-orange"
-                    onClick={resetForm}
+                    onClick={() => {
+                      resetForm();
+                      handleClearURLState();
+                    }}
                     style={{ background: "#533019", borderColor: "#a95d1c", color: "#ffd8b0" }}
                   >
                     Reset Form
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  className="gd-btn"
+                  style={{
+                    marginTop: 8,
+                    width: "100%",
+                    background: copied ? "#1a4a2a" : "#1a3a6e",
+                    color: copied ? "#6dff97" : "#7ab3f0",
+                    border: `1px solid ${copied ? "#4caf50" : "#2a5a9a"}`,
+                    transition: "all 0.3s ease",
+                  }}
+                  onClick={() => handleCopyShareURL(form)}
+                >
+                  {copied ? "Link Copied!" : "Copy Share Link"}
+                </button>
 
                 <button type="submit" className="gd-btn gd-btn-green" disabled={submitting} style={{ marginTop: 10 }}>
                   {submitting ? "Submitting..." : "Submit"}
@@ -671,11 +743,18 @@ export default function InputPanel({ gd }) {
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-                      <SummaryItem label="Location Mode" value={form.mode === "custom_loading" ? "Custom loading" : "Location lookup"} green />
+                      <SummaryItem
+                        label="Location Mode"
+                        value={form.mode === "custom_loading" ? "Custom loading" : "Location lookup"}
+                        green
+                      />
                       <SummaryItem label="Location / Source" value={locationSummary} green />
                       <SummaryItem label="Span / Width" value={`${form.span || "—"} m / ${form.carriageway_width || "—"} m`} />
                       <SummaryItem label="Geometry Checked" value={geometryResult ? "Yes" : "Not yet"} />
-                      <SummaryItem label="Materials" value={`${form.girder_steel || "—"}, ${form.cross_bracing_steel || "—"}, ${form.deck_concrete || "—"}`} />
+                      <SummaryItem
+                        label="Materials"
+                        value={`${form.girder_steel || "—"}, ${form.cross_bracing_steel || "—"}, ${form.deck_concrete || "—"}`}
+                      />
                       <SummaryItem label="Ready for next stage" value="Yes" green />
                     </div>
                   </div>
