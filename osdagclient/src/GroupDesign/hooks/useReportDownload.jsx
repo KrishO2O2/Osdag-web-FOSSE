@@ -18,6 +18,15 @@ export function useReportDownload() {
     setGenerating(true);
     setError(null);
 
+    const hasGeometry = gd?.geometryResult != null;
+    const hasSubmitSuccess = gd?.submitResult?.success === true;
+
+    if (!hasGeometry && !hasSubmitSuccess) {
+      setError("Run Check Geometry or Submit successfully before downloading report.");
+      setGenerating(false);
+      return;
+    }
+
     try {
       const docElement = <DesignReport gd={gd} bridgeImageSrc={bridgeImageSrc} />;
       const blob = await pdf(docElement).toBlob();
