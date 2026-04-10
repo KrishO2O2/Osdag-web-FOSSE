@@ -255,3 +255,144 @@
    .gd-btn.gd-btn-green:disabled:hover {
      background: #6f8f73 !important;
    }
+
+
+   .gd-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .gd-tab {
+    flex: 1;
+    height: 38px;
+    border: 1px solid #2a4a8a;
+    border-radius: 6px;
+    background: #0d1b3e;
+    color: #c9d6ee;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .gd-tab.is-active {
+    background: #18315f;
+    color: #ffffff;
+    border-color: #4caf50;
+  }
+  
+  .gd-inline-card {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #2a4a8a;
+    border-radius: 6px;
+    background: #102247;
+  }
+  
+  .gd-inline-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #dfe6f3;
+  }
+  
+  .gd-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  
+  .gd-summary-item {
+    padding: 8px 10px;
+    border: 1px solid #2a4a8a;
+    border-radius: 6px;
+    background: #0d1b3e;
+  }
+  
+  .gd-summary-label {
+    font-size: 11px;
+    color: #9db0d8;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  
+  .gd-summary-value {
+    font-size: 13px;
+    color: #e0e0e0;
+    font-weight: 600;
+    word-break: break-word;
+  }
+  
+  .gd-summary-value.is-green {
+    color: #6dff97;
+  }
+  
+  .gd-disabled-note {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #7d2f2f;
+    border-radius: 6px;
+    background: #351515;
+    color: #ff9d9d;
+    font-weight: 700;
+  }
+  
+  .gd-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 10, 20, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 9999;
+  }
+  
+  .gd-modal {
+    width: min(620px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    background: #16213e;
+    border: 1px solid #2a4a8a;
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  }
+  
+  .gd-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a4a8a;
+  }
+  
+  .gd-modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #eaf1ff;
+  }
+  
+  .gd-modal-close {
+    border: none;
+    background: transparent;
+    color: #dfe6f3;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  
+  .gd-modal-body {
+    padding: 14px;
+  }
+  
+  .gd-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 14px;
+    border-top: 1px solid #2a4a8a;
+  }
+  
+  @media (max-width: 640px) {
+    .gd-summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }

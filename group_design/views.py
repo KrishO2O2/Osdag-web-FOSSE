@@ -149,7 +149,6 @@ class CheckGeometryView(APIView):
     POST /api/group-design/check-geometry/
     Validates additional geometry and returns computed fields.
     """
-
     def post(self, request):
         serializer = AdditionalGeometrySerializer(data=request.data)
         if not serializer.is_valid():
@@ -160,17 +159,28 @@ class CheckGeometryView(APIView):
         gs = d["girder_spacing"]
         ng = d["number_of_girders"]
         dow = d["deck_overhang_width"]
-        ow = cw + 5
 
-        return Response({
-            "valid": True,
-            "overall_bridge_width": ow,
-            "girder_spacing": gs,
-            "number_of_girders": ng,
-            "deck_overhang_width": dow,
-            "formula_check": f"({ow:.1f} - {dow:.1f}) / {gs:.1f} = {(ow - dow) / gs:.2f}",
-        }, status=status.HTTP_200_OK)
+        overall_width = cw + 5.0
+        effective_width = overall_width - (2 * dow)
+        raw_girder_count = (effective_width / gs) + 1
+        expected_girders = max(2, int(round(raw_girder_count)))
 
+        return Response(
+            {
+                "valid": True,
+                "overall_bridge_width": overall_width,
+                "effective_width": effective_width,
+                "girder_spacing": gs,
+                "number_of_girders": ng,
+                "expected_number_of_girders": expected_girders,
+                "deck_overhang_width": dow,
+                "formula_check": (
+                    f"(({overall_width:.2f} - 2×{dow:.2f}) / {gs:.2f}) + 1 = "
+                    f"{raw_girder_count:.2f} → expected girders ≈ {expected_girders}"
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 # ── 4. Full Form Submit ─────────────────────────────────────
 class GroupDesignSubmitView(APIView):
@@ -182,10 +192,7 @@ class GroupDesignSubmitView(APIView):
     def post(self, request):
         serializer = GroupDesignSubmitSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                {"success": False, "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
 
